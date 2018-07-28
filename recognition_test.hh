@@ -112,9 +112,8 @@ std::array<int,200> testmatrixIN_false
 
 //iterates over all the input matrix and saves hits of over 90% in map as a position value pair
 //TODO template parameters for more generic comparing inputs
-template<int height,int width>
-void iterate(std::array<int,200> M_in, std::array<int,117> M_comp){
-
+template<int height,int width> //<-confusion? Matrix indices
+void iterate(std::array<int,height*width> M_in, std::array<int,117> M_comp){
   //as mentioned: for now the comparing matrix (stamp) is fixed in size
   const int W=9; //stamp width
   const int H=13; //stamp height
@@ -122,14 +121,10 @@ void iterate(std::array<int,200> M_in, std::array<int,117> M_comp){
 
   const int max_x=width-W+1; //#steps horizontally
   const int max_y=height-H+1; //#steps vertically
-
-
 //TODO something more sophisticated maybe... transform and the likes
-
   for (int y=0; y<max_y; ++y)
     for (int x=0; x<max_x;++x)
       {
-        //std::cout<< "do you even enter?\n";
         //keep it "simple" for now
         //almost copied from simliarity_measure_x100 above
 
@@ -143,6 +138,8 @@ void iterate(std::array<int,200> M_in, std::array<int,117> M_comp){
             result+=1;
         //max result is 13x9=117
         result=result*100/max_score;
+//simliarity score should provide a quite decent tool to extract chars -> blessing of dimensionality, iid distributed dimensions tend to have the same distance, but these here are not iid ;-)
+  std::cout<<"x: "<<x<<" y: "<<y<<" similarity score: "<<result<<"\n";
         if (result>90){
           std::cout<<"char 7 found!\n";
           //write most likely result into output
@@ -151,6 +148,93 @@ void iterate(std::array<int,200> M_in, std::array<int,117> M_comp){
       }
 
 }
+
+
+
+
+//20x10 Matrix
+std::array<int,800> TM_IN
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1 ,1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+  0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+  0, 0, 0 ,0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1 ,1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+  0, 0, 0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+  0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+  0, 0, 0 ,0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 
 
 

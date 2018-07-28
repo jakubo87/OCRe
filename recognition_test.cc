@@ -16,26 +16,33 @@ int main (){
 //issue the command for true
 std::cout<< "finding a 7 in a wider array\n";
 iterate<20,10>(testmatrixIN_true,testmatrix7);
-
 for (xy_char i: output)
-  std::cout<< "x: "<<i.x<< " y: "<<i.y<< "char: "<<i.value<<"\n";
-
+  std::cout<< "x: "<<i.x<< " y: "<<i.y<< " char: "<<i.value<<"\n";
 for (xy_char i: output)
   std::cout<<i.value;
 std::cout<<"\n\n";
-
-
+output.clear();
 
 //issue the command for false
 std::cout<< "finding a 7 in a wider array\n";
 iterate<20,10>(testmatrixIN_false,testmatrix7);
-
 for (xy_char i: output)
   std::cout<< "x: "<<i.x<< " y: "<<i.y<< "char: "<<i.value<<"\n";
-
 for (xy_char i: output)
   std::cout<<i.value;
-std::cout<<"\n";
+std::cout<<"\n\n";
+output.clear();
+
+//issue the command for true
+std::cout<< "finding a 7 in a wider array\n";
+iterate<80,10>(TM_IN,testmatrix7);
+for (xy_char i: output)
+  std::cout<< "x: "<<i.x<< " y: "<<i.y<< "char: "<<i.value<<"\n";
+for (xy_char i: output)
+  std::cout<<i.value;
+std::cout<<"\n\n";
+output.clear();
+
 
 }
 
