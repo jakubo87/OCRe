@@ -3,6 +3,11 @@
 
 int main (){
 
+//prepare chars //vector of patterns to be compared
+chars.push_back(char0);
+chars.push_back(char7);
+
+
 //general function testing
   std::cout<< "Test for my naive approach on recognition.\n";
 
@@ -13,11 +18,11 @@ int main (){
   std::cout<< similarity_measure_x100(char_0, char_7)   <<"\n";
 
 
-//issue the command for true
+//issue the command
 std::cout<< "finding a 7 in a wider array\n";
 iterate(test_IN,char_7);
 for (xy_char i: output)
-  std::cout<< "x: "<<i.x<< " y: "<<i.y<< "char: "<<i.value<<"\n";
+  std::cout<< "x: "<<i.x<< " y: "<<i.y<< " char: "<<i.value<<"\n";
 for (xy_char i: output)
   std::cout<<i.value;
 std::cout<<"\n\n";
