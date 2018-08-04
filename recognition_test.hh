@@ -1,3 +1,8 @@
+#ifndef __RECOGNITION_TEST_H_INCLUDED__
+#define __RECOGNITION_TEST_H_INCLUDED__
+
+
+
 #include <array>
 #include <vector>
 //#include "_chars.hh"
@@ -279,4 +284,4 @@ const matrix<13,9> char_0 (ar_char_0);
 const mask char7 {char_7,'7'};
 const mask char0 {char_0,'0'};
 
-  
+#endif

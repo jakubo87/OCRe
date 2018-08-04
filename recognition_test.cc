@@ -1,5 +1,6 @@
 #include <iostream>
 #include "recognition_test.hh"
+#include "writetofile.hh"
 
 int main (){
 
@@ -26,6 +27,11 @@ for (xy_char i: output)
 for (xy_char i: output)
   std::cout<<i.value;
 std::cout<<"\n\n";
+
+
+writetofile(output);
+
+
 output.clear();
 
 
