@@ -1,0 +1,13 @@
+OUTLINE
+
+##preliminary goal
+step 01 Load JPEG containing a single letter
+step 02 identify that character using some sort of similarity measure
+
+##main goal
+@step 2 train a NN to identify the letter
+
+##next more advanced goals
+add:
+step 01a find rectangular (trapezoid) region containing (or not containing) text
+step 01b rectify and normalize the input
