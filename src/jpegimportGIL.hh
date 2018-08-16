@@ -5,6 +5,7 @@
   #include <boost/gil/extension/io/jpeg_io.hpp>
   //  #include <boost/gil/gil_all.hpp>
   #include <array>
+  #include <string>
   #include "recognition_test.hh"
 
 //Globals
@@ -15,17 +16,20 @@ namespace gil = boost::gil;
 //read and scale image
 //TODO improve contrast + other stuff
 //TODO generalize to rgb pictures! atm only grayscale 8bit
-template<int height,int width>
-matrix<height,width> boost_gil_read_img()
-{
-  gil::gray8_image_t img2;
-  gil::jpeg_read_image("Testimages/7007.jpg", img2);
-  std::cout << "Read complete, got an image " << img2.width()
-            << " by " << img2.height() << " pixels\n";
 
-  gil::gray8_pixel_t px2 = *const_view(img2).at(5, 10);
+decltype(auto) boost_gil_read_img(std::string & fname)
+{
+  gil::gray8_image_t img;
+  gil::jpeg_read_image(fname, img);
+  std::cout << "Read complete, got an image " << img.width()
+            << " by " << img.height() << " pixels\n";
+
+  gil::gray8_pixel_t px = *const_view(img).at(5, 10);
   std::cout << "The pixel at 5,10 is "
-            << (int)px2[0] << '\n';
+            << (int)px[0] << '\n';
+
+  int const height=img.height();
+  int const width=img.width();
 
   //generating an array
 
@@ -33,7 +37,7 @@ matrix<height,width> boost_gil_read_img()
   //copying the pixeldata (in case of there being some sort of proxy - thx c++)
   for (int i=0; i<height; ++i){
     for (int j=0; j<width; ++j){
-      pixels[i*width+j]=*const_view(img2).at(j,i);
+      pixels[i*width+j]=*const_view(img).at(j,i);
     }
   }
 
