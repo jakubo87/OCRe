@@ -4,18 +4,23 @@
 
 
 #include <vector>
-#include "recognition_test.hh"
+#include "recognition.hh"
 #include <iostream>
 #include <fstream>
+#include <string>
 
-
-void writetofile(const std::vector<xy_char> & vec){
+void writetofile(const std::string text){
   std::ofstream foutput;
   foutput.open ("output.txt");
-  int x,y=0;
-  for (xy_char e : vec){
+
+  /*
+  for (auto e : vec){
     foutput << e.value;
   }
+  */
+  foutput << text;
+
+
   foutput.close();
   std::cout << "File written successfully.\n";
 

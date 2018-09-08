@@ -1,16 +1,13 @@
 //source    https://www.quora.com/How-can-we-convert-a-png-jpeg-image-into-a-2D-array-in-C++-If-possible-please-attach-code-snippets
 
 #include <iostream>
-#include <boost/gil/extension/io/jpeg_io.hpp>
-//  #include <boost/gil/gil_all.hpp>
 #include "jpegimportGIL.hh"
-
-namespace gil = boost::gil;
 
 //shows height and width of a jpeg
 int main(){
 
   auto result=boost_gil_read_img("Testimages/7007.jpg");
+
 
   return 0;
 }

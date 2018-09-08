@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include "structures.hh"
 
 using X = int;
 using Y = int;
@@ -32,9 +33,9 @@ const std::vector<std::pair<Y,X>> dir_prox {
 class glyph{
 public:
 
-glyph(Y y,X x)
+glyph(Y y,X x, matrix input)
 :_top(y),_left(x)
-{findall();} //y will remain, x can change
+{findall(input);} //y will remain, x can change
 
 bool contains(X x,Y y){
   if (_data.find(std::make_pair(y,x))!=_data.end()) return true;
@@ -61,15 +62,16 @@ private:
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
-  void findall(){
+  void findall(matrix input){
   _data.insert(std::make_pair(_top,_left));
   //auto ytbc= _data; //yet-to-be-checked
   std::all_of(_data.begin(),_data.end(),[&](std::pair<Y,X> p){
-    for (auto i : dir_prox){
-      int x=p.second+i.second;
-      int y =p.first+i.first;
-      //if (!_data.contains(x,y)) not needed
-      _data.insert(std::make_pair(y,x));
+    for (auto i : dir_prox){ //check all the neighbours
+      int x = p.second+i.second;
+      int y = p.first+i.first;
+      if (!_data.contains(x,y))
+        if(T*255<input[y][x])
+          _data.insert(std::make_pair(y,x));
     }
   });
 
@@ -82,13 +84,14 @@ using gly_string = std::vector<glyph>;
 
 
 //algorithm
-template<class AAA>
-gly_string gly_scan(AAA input, int height,int width){
+gly_string gly_scan(const matrix & input){
+  int height=input.size();
+  int width=input[0].size();
   gly_string text; //
 
   for (Y y=0;y<height; ++y){ // for every line
     for (X x=0;x<width;++x){ // for every pixel in that line
-      if (input[y][x]>T) //<- view on pixels //TODO| if black then do proceed
+      if (input[y][x]>T*255)
       {
         bool cont=false; //contained
         for (int g=0;g<text.size();++g){ //for every glyph found
@@ -97,7 +100,7 @@ gly_string gly_scan(AAA input, int height,int width){
         }
         //find all pixels for the new glyph through neighbourhood
         if (!cont)
-        text.push_back(glyph(y,x)); //create new glyph and add to vector
+        text.push_back(glyph(y,x, input)); //create new glyph and add to vector
       }
     }
   }

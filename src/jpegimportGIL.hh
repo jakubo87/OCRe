@@ -6,7 +6,8 @@
   //  #include <boost/gil/gil_all.hpp>
   #include <array>
   #include <string>
-  #include "recognition_test.hh"
+  #include "recognition.hh"
+  #include "structures.hh"
 
 //Globals
 
@@ -17,7 +18,7 @@ namespace gil = boost::gil;
 //TODO improve contrast + other stuff
 //TODO generalize to rgb pictures! atm only grayscale 8bit
 
-decltype(auto) boost_gil_read_img(std::string & fname)
+decltype(auto) boost_gil_read_img(const std::string & fname)
 {
   gil::gray8_image_t img;
   gil::jpeg_read_image(fname, img);
@@ -31,20 +32,20 @@ decltype(auto) boost_gil_read_img(std::string & fname)
   int const height=img.height();
   int const width=img.width();
 
-  //generating an array
+  //instantiating the matrix
 
-  std::array<int,height*width> pixels;
+  matrix pixels;
   //copying the pixeldata (in case of there being some sort of proxy - thx c++)
+
   for (int i=0; i<height; ++i){
+    std::vector<int> line;
     for (int j=0; j<width; ++j){
-      pixels[i*width+j]=*const_view(img).at(j,i);
+      line.push_back(*const_view(img).at(j,i)); //Orientation ok???
     }
+    pixels.push_back(line);
   }
 
-  //generating the matrix
-  matrix m{std::move(pixels),height,width}
-  //return result
-  return std::move(m);
+  return std::move(pixels);
 
 }
 
