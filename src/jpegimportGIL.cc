@@ -6,10 +6,10 @@
 //shows height and width of a jpeg
 int main(){
 
-  auto result=boost_gil_read_img("Testimages/7007.jpg");
+  auto result=boost_gil_read_img("../Testimages/7007.jpg");
 
 
-  return 0;
+  return 1;
 }
 
 

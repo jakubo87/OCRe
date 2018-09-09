@@ -7,25 +7,38 @@
 #include <algorithm>
 #include "structures.hh"
 
-using X = int;
-using Y = int;
+bool operator==(const point & lhs, const point & rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+//Hash function for combined types
+struct MyHash
+{
+  std::size_t operator()(const point & p) const noexcept
+  {
+    std::size_t h1 = std::hash<int>{}(p.x);
+    std::size_t h2 = std::hash<int>{}(p.y);
+    return h1 ^ (h2 << 1); // or use boost::hash_combine (see Discussion)
+  }
+};
+
 
 
 //variables
 double T=0.2; //threshold for contrast, to be worked on later
 
 //const
-const std::vector<std::pair<Y,X>> dir_prox {
-    std::make_pair(-1,-1),
-    std::make_pair(-1,0),
-    std::make_pair(-1,1),
-    std::make_pair(0,-1),
-    std::make_pair(0,0),
-    std::make_pair(0,1),
-    std::make_pair(1,-1),
-    std::make_pair(1,0),
-    std::make_pair(1,1)
-    }; //direct proximity //TODO can lead to segvfault if last pixel hori. or ver. is black
+const std::vector<point> dir_prox {
+    point{-1,-1},
+    point{-1,0},
+    point{-1,1},
+    point{0,-1},
+    point{0,0},
+    point{0,1},
+    point{1,-1},
+    point{1,0},
+    point{1,1}
+}; //direct proximity //TODO can lead to segvfault if last pixel hori. or ver. is black
 
 
 
@@ -38,7 +51,7 @@ glyph(Y y,X x, matrix input)
 {findall(input);} //y will remain, x can change
 
 bool contains(X x,Y y){
-  if (_data.find(std::make_pair(y,x))!=_data.end()) return true;
+  if (_data.find(point{y,x})!=_data.end()) return true;
   return false;
 }
 
@@ -50,7 +63,7 @@ X right(){return _right;}
 int h_size(){return right()-left();}
 int v_size(){return bottom()-top();}
 
-const std::unordered_set<std::pair<Y, X>> & data(){return _data;}
+const auto & data(){return _data;}
 
 private:
   Y _top; //line of the glyph (also top)
@@ -58,22 +71,25 @@ private:
   Y _bottom;
   X _right;
   //(_xl,_yt) does not need to be contained later on
-  std::unordered_set<std::pair<Y, X>> _data;
+  std::unordered_set<point,MyHash> _data;
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
   void findall(matrix input){
-  _data.insert(std::make_pair(_top,_left));
-  //auto ytbc= _data; //yet-to-be-checked
-  std::all_of(_data.begin(),_data.end(),[&](std::pair<Y,X> p){
-    for (auto i : dir_prox){ //check all the neighbours
-      int x = p.second+i.second;
-      int y = p.first+i.first;
-      if (!_data.contains(x,y))
-        if(T*255<input[y][x])
-          _data.insert(std::make_pair(y,x));
-    }
-  });
+    _data.insert(point{_top,_left});
+    std::vector<point> queue; //yet-to-be-checked
+    for (auto p :queue){
+      for (auto i : dir_prox){ //check all the neighbours
+        int x = p.x+i.x;
+        int y = p.y+i.y;
+        if (!contains(x,y)) //only add pixels, that have not been visited before
+          if(T*255<input[y][x]){
+            //new black pixel in queue and in glyph
+            queue.push_back(point{y,x});
+            _data.insert(point{y,x});
+          }
+      }
+    };
 
   }
 };
