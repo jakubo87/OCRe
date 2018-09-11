@@ -49,10 +49,7 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
 
 }
 
-    //fucking include -ljpeg at compiler bitch!
-
-
-
+    //fucking include -ljpeg at compiler!
 
 
 

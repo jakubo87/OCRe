@@ -22,10 +22,9 @@ struct xy_char{
   //opt padding or reduce x...?
 };
 
-struct mask{
-matrix arr;
-char value;
-};
+
+//global
+std::vector<matrix> masks;
 
 
 

@@ -46,32 +46,32 @@ const std::vector<point> dir_prox {
 class glyph{
 public:
 
-glyph(Y y,X x, matrix input)
-:_top(y),_left(x)
-{findall(input);} //y will remain, x can change
+  glyph(Y y,X x, matrix input)
+  :_top(y),_left(x)
+  {findall(input);} //y will remain, x can change
 
-bool contains(X x,Y y){
-  if (_data.find(point{y,x})!=_data.end()) return true;
-  return false;
-}
+  bool contains(X x,Y y){
+    if (_data.find(point{y,x})!=_data.end()) return true;
+    return false;
+  }
 
-Y top(){ return _top;}
-X left(){ return _left;}
-Y bottom(){return _bottom;}
-X right(){return _right;}
-//assuming that 0,0 is the left top corner of the image
-int h_size(){return right()-left();}
-int v_size(){return bottom()-top();}
+  Y top(){ return _top;}
+  X left(){ return _left;}
+  Y bottom(){return _bottom;}
+  X right(){return _right;}
+  //assuming that 0,0 is the left top corner of the image
+  int h_size(){return right()-left();}
+  int v_size(){return bottom()-top();}
 
-const auto & data(){return _data;}
+  const auto & data(){return _data;}
 
-private:
-  Y _top; //line of the glyph (also top)
-  X _left; //leftmost pixel (column)
-  Y _bottom;
-  X _right;
-  //(_xl,_yt) does not need to be contained later on
-  std::unordered_set<point,MyHash> _data;
+  private:
+    Y _top; //line of the glyph (also top)
+    X _left; //leftmost pixel (column)
+    Y _bottom;
+    X _right;
+    //(_xl,_yt) does not need to be contained later on
+    std::unordered_set<point,MyHash> _data;
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
@@ -90,7 +90,6 @@ private:
           }
       }
     };
-
   }
 };
 
