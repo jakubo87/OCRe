@@ -6,12 +6,31 @@
 #include <vector>
 #include <string>
 #include "gly_scan.hh"
+#include <algorithm>
 
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
-void make_mask(){
-  // for all jpegs in folder Trainingimages make a mask according to ascii numbers of chars
+void make_masks(){
+  // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
+}
+
+matrix glyph_to_matrix(glyph g){
+    //offsets
+    X left=g.left();
+    Y top=g.top();
+    Y bottom=g.bottom();
+    X right=g.right();
+
+  //initialize the matrix containing only the glyph
+  matrix m={std::vector<int> (right-left)};
+  for (int i=1;i<20;++i) //add 19 more lines
+    m.push_back(std::vector<int> (right-left));
+
+  std::for_each(g.data().begin(),g.data().end(),[&](auto i){
+    m[i.y-top][i.x-left]=1;
+  });
+  return m;
 }
 
 

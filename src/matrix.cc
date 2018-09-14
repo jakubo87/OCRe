@@ -24,5 +24,14 @@ int main (){
     for (int j=0;j<bla[i].size();++j)
       std::cout << bla[i][j] << "\n";
 
+
+  std::cout<< "and now resizing:\n\n";
+
+  auto m =resize_matrix(bla,1,1);
+  std::cout << "average over the matrix elements is "<< m[0][0] <<" (rounded value of 2,5)\n";
+
+
+
   return 0;
 }
+
