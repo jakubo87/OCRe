@@ -83,7 +83,7 @@ public:
         int x = p.x+i.x;
         int y = p.y+i.y;
         if (!contains(x,y)) //only add pixels, that have not been visited before
-          if(T*255<input[y][x]){
+          if(T*255>input[y][x]){
             //new black pixel in queue and in glyph
             queue.push_back(point{y,x});
             _data.insert(point{y,x});
@@ -106,7 +106,7 @@ gly_string gly_scan(const matrix & input){
 
   for (Y y=0;y<height; ++y){ // for every line
     for (X x=0;x<width;++x){ // for every pixel in that line
-      if (input[y][x]>T*255)
+      if (input[y][x]<T*255)
       {
         bool cont=false; //contained
         for (int g=0;g<text.size();++g){ //for every glyph found

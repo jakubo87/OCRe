@@ -6,7 +6,7 @@
   //  #include <boost/gil/gil_all.hpp>
   #include <array>
   #include <string>
-  #include "recognition.hh"
+  //#include "recognition.hh"
   #include "structures.hh"
 
 //Globals
@@ -25,8 +25,8 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
   std::cout << "Read complete, got an image " << img.width()
             << " by " << img.height() << " pixels\n";
 
-  gil::gray8_pixel_t px = *const_view(img).at(5, 10);
-  std::cout << "The pixel at 5,10 is "
+  gil::gray8_pixel_t px = *const_view(img).at(33, 33);
+  std::cout << "The pixel at 33,33 is "
             << (int)px[0] << '\n';
 
   int const height=img.height();
@@ -39,7 +39,7 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
   for (int i=0; i<height; ++i){
     std::vector<int> line (width);
     for (int j=0; j<width; ++j){
-      line[j]=*const_view(img).at(j,i); //Orientation ok???
+      line[j]=*const_view(img).at(j,i);
     }
     pixels.push_back(line);
   }

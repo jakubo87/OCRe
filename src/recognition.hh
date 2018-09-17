@@ -8,6 +8,7 @@
 #include "gly_scan.hh"
 #include <algorithm>
 #include "jpegimportGIL.hh"
+#include <filesystem>
 
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
@@ -15,15 +16,17 @@ auto make_masks(){ //TODO
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
   std::vector<matrix> masks;
-
-  masks.push_back(
-    resize_matrix(
-      boost_gil_read_img("FILENAME"),
-      MaskH,
-      MaskW
-    )
-  );
-
+  std::string path = "../Testimages";
+  //for all images in ../Testimages
+  for (auto & p : std::filesystem::directory_iterator(path)){ //C++17??
+    masks.push_back(
+      resize_matrix(
+        boost_gil_read_img(static_cast<std::string>(p)),
+        MaskW,
+        MaskH
+      )
+    );
+  }
   return masks;
 }
 
@@ -69,7 +72,7 @@ std::string recognise(gly_string gly_s, std::vector<matrix> masks){
           glyph_to_matrix(g),MaskW,MaskH),
           e);
       if (curr>score) score =curr; //max
-      best='7';
+      best='7'; //TODO identify the jpeg/mask as a char
     }
     if (score>0.8) result.push_back(best);
   }
