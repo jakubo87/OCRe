@@ -18,10 +18,10 @@ auto make_masks(){ //TODO
   std::vector<matrix> masks;
   std::string path = "../Testimages";
   //for all images in ../Testimages
-  for (auto & p : std::filesystem::directory_iterator(path)){ //C++17??
+  for (auto & p : std::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     masks.push_back(
       resize_matrix(
-        boost_gil_read_img(static_cast<std::string>(p)),
+        boost_gil_read_img(p.path().string()),
         MaskW,
         MaskH
       )

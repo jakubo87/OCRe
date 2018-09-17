@@ -22,12 +22,12 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
 {
   gil::gray8_image_t img;
   gil::jpeg_read_image(fname, img);
-  std::cout << "Read complete, got an image " << img.width()
-            << " by " << img.height() << " pixels\n";
-
-  gil::gray8_pixel_t px = *const_view(img).at(33, 33);
-  std::cout << "The pixel at 33,33 is "
-            << (int)px[0] << '\n';
+//  std::cout << "Read complete, got an image " << img.width()
+//            << " by " << img.height() << " pixels\n";
+//
+//  gil::gray8_pixel_t px = *const_view(img).at(33, 33);
+//  std::cout << "The pixel at 33,33 is "
+//            << (int)px[0] << '\n';
 
   int const height=img.height();
   int const width=img.width();

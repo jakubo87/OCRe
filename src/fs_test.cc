@@ -5,7 +5,7 @@
 
 int main()
 {
-    std::string path = "../Testimages";
+    std::string path = "../Trainingimages";
     for (auto & p : std::filesystem::directory_iterator(path))
         std::cout << p << std::endl;
 }
