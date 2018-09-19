@@ -1,2 +1,6 @@
-# OCR-Project
-testing neural networks in c++ on optical character recognition (OCR)
+# OCRe
+Optical Character Recognition experiment
+(or OGRe ... only misread..)
+
+may or may not include NN for char regocnition someday.
+
