@@ -1,0 +1,5 @@
+in ./src
+g++ -std=c++17-g OCR-Project.cc -ljpeg -lstdc++fs -lpthread
+g++ -std=c++17 OCR-Project.cc -ljpeg -lstdc++fs -lpthread
+
+cmake not ready, yet

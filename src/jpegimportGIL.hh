@@ -2,8 +2,10 @@
 #define __JPEFIMPORTGIL_H_INCLUDED__
 
   #include <iostream>
-  #include <boost/gil/extension/io/jpeg_io.hpp>
-  //  #include <boost/gil/gil_all.hpp>
+  #include <boost/gil/extension/io/jpeg.hpp> //in prior version of boost jpeg_io.hpp
+  //probably missing:
+  //#include <boost/gil/extension/io/jpeg/tags.hpp>
+  //#include <boost/gil/gil_all.hpp>
   #include <array>
   #include <string>
   //#include "recognition.hh"
@@ -21,7 +23,10 @@ namespace gil = boost::gil;
 decltype(auto) boost_gil_read_img(const std::string & fname)
 {
   gil::gray8_image_t img;
-  gil::jpeg_read_image(fname, img);
+  //gil::read_image(fname, img, jpeg_tag() ); //jpeg_read_image() ?
+  gil::read_and_convert_image(fname, img);
+
+
 //  std::cout << "Read complete, got an image " << img.width()
 //            << " by " << img.height() << " pixels\n";
 //
