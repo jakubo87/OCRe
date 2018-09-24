@@ -27,6 +27,7 @@ auto make_masks(){ //TODO
         MaskH
       )
     );
+    std::cout << "mask finished!\n";
   }
   return masks;
 }
@@ -42,7 +43,7 @@ double similarity(matrix input,matrix comp){
     for (int j=0;j<W;++j)
       if (input[i][j]==comp[i][j])
         ++result;
-  result=result/(H*W);
+  result=static_cast<double>(result)/(H*W);
   return result;
 }
 
@@ -56,10 +57,14 @@ std::string recognise(gly_string gly_s, std::vector<matrix> masks){
         resize_matrix(
           g.to_matrix(),MaskW,MaskH),
           e);
+      std::cout << "char scored " << curr << "\n";
       if (curr>score) score =curr; //max
       best='7'; //TODO identify the jpeg/mask as a char
     }
-    if (score>0.8) result.push_back(best);
+    if (score>0.8){
+     result.push_back(best);
+     std::cout << "added new char: " << best << "\n";
+    }
   }
   return result;
   //TODO finding new lines, empty lines and empty spaces.

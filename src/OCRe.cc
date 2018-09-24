@@ -9,7 +9,7 @@ int main(){
 //prepare masks for recognition
   auto masks = std::async(std::launch::async, make_masks);
 
-//read the gre  yscale image
+//read the greyscale image
   auto pixels=boost_gil_read_img("../Testimages/7007.jpg");
 //do stuff to the image
 

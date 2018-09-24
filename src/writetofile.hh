@@ -9,7 +9,7 @@
 #include <fstream>
 #include <string>
 
-void writetofile(const std::string text){
+void writetofile(const std::string & text){
   std::ofstream foutput;
   foutput.open ("output.txt");
 
