@@ -47,8 +47,8 @@ class glyph{
 public:
 
   glyph(Y y,X x, matrix input)
-  :_top(y),_left(x)
-  {findall(input);} //y will remain, x can change
+  :_top(y),_left(x), _bottom(y), _right(x) //init variables
+  {findall(input);} //top will remain, bottom, left and right can change
 
   bool contains(point p){
     //if (_data.find(point{x,y})!=_data.end()) return true;
@@ -62,12 +62,12 @@ public:
   std::cout << _bottom << " " << _top <<"\n";
   //initialize the matrix containing only the glyph
   matrix m;
-  for (int i=0;i<_bottom-_top;++i)
-    m.push_back(std::vector<int> (_right-_left));
+  for (int i=0;i<_bottom-_top+1;++i)
+    m.push_back(std::vector<int> (_right-_left+1));
 
   std::for_each(_data.begin(),_data.end(),[&](auto i){
     std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
-    std::cout <<"i.x=" << i.y <<"left="<< _left << "\n";
+    std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
     m[i.y-_top][i.x-_left]=1;
   });
   return m;
@@ -119,8 +119,14 @@ public:
             _data.push_back(point{x,y}); //wont go into the queue a second time
             //writing edge rows and lines (bottom, top, ..)
             if (x<_left) _left=x;
-            if(x>_right) _right=x;
-            if (y>_bottom) _bottom=y; //top not necessary, as we are going linewise top to bottom
+            if(x>_right) {
+              _right=x;
+              std::cout << "right value changed to " << _right << "\n";
+            }
+            if (y>_bottom){
+              _bottom=y; //top not necessary, as we are going linewise top to bottom
+              std::cout << "bottom value changed to " << _bottom << "\n";
+            }
             if(y<_top) _top=y;
             std::cout << "adding point " << x << " " << y  << "to the list\n";
 
@@ -159,7 +165,7 @@ gly_string gly_scan(const matrix & input){
     }
   }
 
-
+  std::cout << "found "<< text.size() << " glyphs in testimage.\n";
   return text;
 }
 
