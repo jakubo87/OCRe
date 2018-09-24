@@ -17,7 +17,7 @@ auto make_masks(){ //TODO
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
   std::vector<matrix> masks;
-  std::string path = "../Testimages";
+  std::string path = "../Trainingimages";
   //for all images in ../Testimages
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     masks.push_back(
@@ -27,7 +27,7 @@ auto make_masks(){ //TODO
         MaskH
       )
     );
-    std::cout << "mask finished!\n";
+    std::cout << "mask finished for" << p.path().string() << "!\n";
   }
   return masks;
 }
@@ -35,15 +35,23 @@ auto make_masks(){ //TODO
 
 
 
-double similarity(matrix input,matrix comp){
+auto similarity(matrix input,matrix comp){
   int H=input.size();
   int W=input[0].size();
   int result=0;
-  for (int i=0;i<H;++i)
-    for (int j=0;j<W;++j)
-      if (input[i][j]==comp[i][j])
+  for (int i=0;i<H;++i){
+    for (int j=0;j<W;++j){
+      //std::cout <<"input: "<< input[i][j] <<"\n";
+      //std::cout <<"mask: " << comp[i][j] <<"\n";
+      //epsilon
+      if (std::abs(input[i][j]-comp[i][j])<T*255){
+        //std::cout<< "scored a point!\n";
         ++result;
-  result=static_cast<double>(result)/(H*W);
+	    }
+	  }
+	}
+  result*=100;
+  result/=H*W;//norm
   return result;
 }
 
@@ -61,7 +69,7 @@ std::string recognise(gly_string gly_s, std::vector<matrix> masks){
       if (curr>score) score =curr; //max
       best='7'; //TODO identify the jpeg/mask as a char
     }
-    if (score>0.8){
+    if (score>70){
      result.push_back(best);
      std::cout << "added new char: " << best << "\n";
     }

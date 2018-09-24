@@ -58,17 +58,16 @@ public:
 
   matrix to_matrix(){
 
-  std::cout << _right << " " << _left <<"\n";
-  std::cout << _bottom << " " << _top <<"\n";
   //initialize the matrix containing only the glyph
   matrix m;
-  for (int i=0;i<_bottom-_top+1;++i)
+  for (int i=0;i<_bottom-_top+1;++i){
     m.push_back(std::vector<int> (_right-_left+1));
-
+    std::fill(m[i].begin(),m[i].end(),255);
+  }
   std::for_each(_data.begin(),_data.end(),[&](auto i){
-    std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
-    std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
-    m[i.y-_top][i.x-_left]=1;
+    //std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
+    //std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
+    m[i.y-_top][i.x-_left]=0;
   });
   return m;
 }
@@ -121,14 +120,14 @@ public:
             if (x<_left) _left=x;
             if(x>_right) {
               _right=x;
-              std::cout << "right value changed to " << _right << "\n";
+             // std::cout << "right value changed to " << _right << "\n";
             }
             if (y>_bottom){
               _bottom=y; //top not necessary, as we are going linewise top to bottom
-              std::cout << "bottom value changed to " << _bottom << "\n";
+             // std::cout << "bottom value changed to " << _bottom << "\n";
             }
             if(y<_top) _top=y;
-            std::cout << "adding point " << x << " " << y  << "to the list\n";
+           // std::cout << "adding point " << x << " " << y  << "to the list\n";
 
           }
       }
