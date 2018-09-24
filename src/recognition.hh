@@ -10,27 +10,38 @@
 #include "jpegimportGIL.hh"
 #include <filesystem>
 #include <boost/filesystem.hpp>
+#include <utility>
+
+
+using trans_tab=std::pair<std::vector<matrix>,std::vector<char>>;
 
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
 auto make_masks(){ //TODO
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
+  trans_tab trans;
+  std::vector<char> chars;
   std::vector<matrix> masks;
   std::string path = "../Trainingimages";
   //for all images in ../Testimages
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
+    std::string path=p.path().string();
     masks.push_back(
       resize_matrix(
         gly_scan(
-          boost_gil_read_img(p.path().string())).back().to_matrix(),
+          boost_gil_read_img(path)).back().to_matrix(),
         MaskW,
         MaskH
       )
     );
-    std::cout << "mask finished for" << p.path().string() << "!\n";
+    std::cout << "mask finished for" << path << "!\n";
+    int len=path.length();
+    chars.push_back(path[len-5]);
   }
-  return masks;
+  trans.first=masks;
+  trans.second=chars;
+  return trans;
 }
 
 
@@ -56,19 +67,21 @@ auto similarity(matrix input,matrix comp){
   return result;
 }
 
-std::string recognise(gly_string gly_s, std::vector<matrix> masks){
+std::string recognise(gly_string gly_s, trans_tab trans){
   std::string result;
   for (auto g : gly_s){ //for each glyph in the sequence
     char best;
     double score=0;
-    for (auto e: masks){
+    for (int i=0;i<trans.first.size();++i){
       int curr= similarity(
         resize_matrix(
           g.to_matrix(),MaskW,MaskH),
-          e);
+          trans.first[i]);
       std::cout << "char scored " << curr << "\n";
-      if (curr>score) score =curr; //max
-      best='7'; //TODO identify the jpeg/mask as a char
+      if (curr>score){
+        score =curr; //max
+        best=trans.second[i]; //TODO identify the jpeg/mask as a char
+      }
     }
     if (score>70){
      result.push_back(best);

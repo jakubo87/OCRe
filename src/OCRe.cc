@@ -7,7 +7,7 @@
 int main(){
 
 //prepare masks for recognition
-  auto masks = std::async(std::launch::async, make_masks);
+  auto trans_tab = std::async(std::launch::async, make_masks);
 
 //read the greyscale image
   auto pixels=boost_gil_read_img("../Testimages/7007.jpg");
@@ -16,7 +16,7 @@ int main(){
 //extract glyphs from the image
   auto glyphs= gly_scan(pixels);
 //write glyphs to ve  ctor
-  auto  text =recognise(glyphs, masks.get());
+  auto  text =recognise(glyphs, trans_tab.get());
 //write to file
   writetofile(text);
   return 0;
