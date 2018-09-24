@@ -1,5 +1,4 @@
 in ./src
-g++ -std=c++17 -g OCRe.cc -ljpeg -lstdc++fs -lpthread
-g++ -std=c++17 OCRe.cc -ljpeg -lstdc++fs -lpthread
+g++ -g OCRe.cc -ljpeg -lboost_system -lboost_filesystem -lpthread
 
 cmake not ready, yet

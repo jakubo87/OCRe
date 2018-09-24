@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "jpegimportGIL.hh"
 #include <filesystem>
+#include <boost/filesystem.hpp>
 
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
@@ -18,7 +19,7 @@ auto make_masks(){ //TODO
   std::vector<matrix> masks;
   std::string path = "../Testimages";
   //for all images in ../Testimages
-  for (auto & p : std::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
+  for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     masks.push_back(
       resize_matrix(
         boost_gil_read_img(p.path().string()),
@@ -30,23 +31,7 @@ auto make_masks(){ //TODO
   return masks;
 }
 
-matrix glyph_to_matrix(glyph g){
-    //offsets
-    X left=g.left();
-    Y top=g.top();
-    Y bottom=g.bottom();
-    X right=g.right();
 
-  //initialize the matrix containing only the glyph
-  matrix m={std::vector<int> (right-left)};
-  for (int i=1;i<20;++i) //add 19 more lines
-    m.push_back(std::vector<int> (right-left));
-
-  std::for_each(g.data().begin(),g.data().end(),[&](auto i){
-    m[i.y-top][i.x-left]=1;
-  });
-  return m;
-}
 
 
 double similarity(matrix input,matrix comp){
@@ -69,7 +54,7 @@ std::string recognise(gly_string gly_s, std::vector<matrix> masks){
     for (auto e: masks){
       int curr= similarity(
         resize_matrix(
-          glyph_to_matrix(g),MaskW,MaskH),
+          g.to_matrix(),MaskW,MaskH),
           e);
       if (curr>score) score =curr; //max
       best='7'; //TODO identify the jpeg/mask as a char

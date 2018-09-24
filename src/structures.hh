@@ -15,6 +15,9 @@ using Y = int;
 
 
 // because array wants a size at compile time
+
+//"Matrix" is a preliminary solution to later generalize the signatures
+//will probably go from [][] to .at(x,y)
 using matrix= std::vector<std::vector<int>>;
 
 struct point{

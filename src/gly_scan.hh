@@ -50,10 +50,35 @@ public:
   :_top(y),_left(x)
   {findall(input);} //y will remain, x can change
 
-  bool contains(X x,Y y){
-    if (_data.find(point{y,x})!=_data.end()) return true;
-    return false;
+  bool contains(point p){
+    //if (_data.find(point{x,y})!=_data.end()) return true;
+    return (std::find(_data.begin(), _data.end(), p)!=_data.end());
   }
+
+
+  matrix to_matrix(){
+
+  std::cout << _right << " " << _left <<"\n";
+  std::cout << _bottom << " " << _top <<"\n";
+  //initialize the matrix containing only the glyph
+  matrix m;
+  for (int i=0;i<_bottom-_top;++i)
+    m.push_back(std::vector<int> (_right-_left));
+
+  std::for_each(_data.begin(),_data.end(),[&](auto i){
+    std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
+    std::cout <<"i.x=" << i.y <<"left="<< _left << "\n";
+    m[i.y-_top][i.x-_left]=1;
+  });
+  return m;
+}
+
+
+
+
+
+
+
 
   Y top(){ return _top;}
   X left(){ return _left;}
@@ -71,22 +96,34 @@ public:
     Y _bottom;
     X _right;
     //(_xl,_yt) does not need to be contained later on
-    std::unordered_set<point,MyHash> _data;
+    //std::unordered_set<point,MyHash> _data;
+    std::vector<point> _data;
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
   void findall(matrix input){
-    _data.insert(point{_top,_left});
-    std::vector<point> queue; //yet-to-be-checked
-    for (auto p :queue){
+    //_data.insert(point{_left,_top});
+    _data.push_back(point{_left,_top});
+    std::vector<point> queue;
+    //initial value to get it started
+    queue.push_back(point{_left, _top}); //yet-to-be-checked, actually not a queue, but a lifo
+    for (int p=0;p<queue.size();++p){
       for (auto i : dir_prox){ //check all the neighbours
-        int x = p.x+i.x;
-        int y = p.y+i.y;
-        if (!contains(x,y)) //only add pixels, that have not been visited before
+        int x = queue[p].x+i.x;
+        int y = queue[p].y+i.y;
+        if (!contains(point{x,y})) //only add pixels, that have not been visited before
           if(T*255>input[y][x]){
             //new black pixel in queue and in glyph
-            queue.push_back(point{y,x});
-            _data.insert(point{y,x});
+            queue.push_back(point{x,y});
+            //_data.insert(point{x,y}); //wont go into the queue a second time
+            _data.push_back(point{x,y}); //wont go into the queue a second time
+            //writing edge rows and lines (bottom, top, ..)
+            if (x<_left) _left=x;
+            if(x>_right) _right=x;
+            if (y>_bottom) _bottom=y; //top not necessary, as we are going linewise top to bottom
+            if(y<_top) _top=y;
+            std::cout << "adding point " << x << " " << y  << "to the list\n";
+
           }
       }
     };
@@ -98,7 +135,7 @@ public:
 using gly_string = std::vector<glyph>;
 
 
-//algorithm
+//algorithm, scan for glyphs
 gly_string gly_scan(const matrix & input){
   int height=input.size();
   int width=input[0].size();
@@ -110,12 +147,14 @@ gly_string gly_scan(const matrix & input){
       {
         bool cont=false; //contained
         for (int g=0;g<text.size();++g){ //for every glyph found
-          cont=(text[g].contains(x,y));
+          cont=(text[g].contains(point{x,y}));
           if (cont) break;
         }
         //find all pixels for the new glyph through neighbourhood
-        if (!cont)
-        text.push_back(glyph(y,x, input)); //create new glyph and add to vector
+        if (!cont){
+          std::cout << "adding new glyph for coord" << x <<" "<< y <<"\n";
+          text.push_back(glyph(y,x, input)); //create new glyph and add to vector
+        }
       }
     }
   }
