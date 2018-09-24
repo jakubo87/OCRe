@@ -22,7 +22,8 @@ auto make_masks(){ //TODO
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     masks.push_back(
       resize_matrix(
-        boost_gil_read_img(p.path().string()),
+        gly_scan(
+          boost_gil_read_img(p.path().string())).back().to_matrix(),
         MaskW,
         MaskH
       )
