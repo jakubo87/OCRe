@@ -1,4 +1,4 @@
 *.out
 src/output.txt
-debug-images/*
+debug-images/*.*
 *output.txt
