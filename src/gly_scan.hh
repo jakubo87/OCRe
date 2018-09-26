@@ -6,6 +6,7 @@
 #include <utility>
 #include <algorithm>
 #include "structures.hh"
+#include "jpegimportGIL.hh"
 
 bool operator==(const point & lhs, const point & rhs) {
     return lhs.x == rhs.x && lhs.y == rhs.y;
@@ -69,6 +70,10 @@ public:
     //std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
     m[i.y-_top][i.x-_left]=0;
   });
+
+  //testing
+  //matrix_to_image(m);
+
   return m;
 }
 
@@ -152,19 +157,19 @@ gly_string gly_scan(const matrix & input){
       {
         bool cont=false; //contained
         for (int g=0;g<text.size();++g){ //for every glyph found
-          cont=(text[g].contains(point{x,y}));
+          cont=text[g].contains(point{x,y});
           if (cont) break;
         }
         //find all pixels for the new glyph through neighbourhood
         if (!cont){
-          std::cout << "adding new glyph for coord" << x <<" "<< y <<"\n";
+          //std::cout << "adding new glyph for coord" << x <<" "<< y <<"\n";
           text.push_back(glyph(y,x, input)); //create new glyph and add to vector
         }
       }
     }
   }
 
-  std::cout << "found "<< text.size() << " glyphs in testimage.\n";
+  std::cout << "found "<< text.size() << " glyphs in image.\n";
   return text;
 }
 

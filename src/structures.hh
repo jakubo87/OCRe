@@ -38,7 +38,6 @@ std::vector<matrix> masks;
 
 
 decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){
-//works for downsizing only
   Y cur_h=input.size();
   X cur_w=input[0].size();
 //ratio only for compile time known stuff...
@@ -59,15 +58,22 @@ decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){
     for (int j=0; j<cur_w;++j){
       //add value to corresponding element in resized matrix
       //std::cout << "adding " <<input[i][j]<<"\n";
-      res[i*Dy][j*Dx]+=input[i][j];
+      //fills up corresponding areas for upsizing
+      for (int dx=0;dx<Dx;++dx)
+        for (int dy=0;dy<Dy;++dy)
+          res[i*Dy+dy][j*Dx+dx]=input[i][j];
+        //mathematical solution not useful here...
+        //  res[i*Dy+dy][j*Dx+dx]+=input[i][j]*Dx*Dy;
       //std::cout << "entry: " <<j*Dx <<" "<<i*Dy <<" is now " <<res[i*Dy][j*Dx]<<"\n";
     }
   }
   //average over elements
+/*
   for (auto & v : res)
     for (auto & e : v)
     // smaller target has to get lower values<-> higher accumulation rate
       e=std::round(e*Dx*Dy); //Jacobi
+*/
   return res;
 }
 

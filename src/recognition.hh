@@ -37,7 +37,7 @@ auto make_masks(){ //TODO
     );
     int len=path.length();
     chars.push_back(path[len-5]);
-    std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
+    //std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
   }
   trans.first=masks;
   trans.second=chars;
@@ -70,15 +70,14 @@ std::string recognise(gly_string gly_s, trans_tab trans){
     char best;
     int init_score=-100;
     double score=init_score;
+    auto comp= resize_matrix(g.to_matrix(),MaskW,MaskH);
+    matrix_to_image(comp);
     for (int i=0;i<trans.first.size();++i){
-      auto curr= similarity(
-        resize_matrix(
-          g.to_matrix(),MaskW,MaskH),
-          trans.first[i]);
+      auto curr= similarity(comp,trans.first[i]);
       std::cout << "char " << trans.second[i] << " scored " << curr << "\n";
       if (curr>score){
         score =curr; //max
-        best=trans.second[i]; //TODO identify the jpeg/mask as a char
+        best=trans.second[i];
       }
       if (score==0) break;
     }
