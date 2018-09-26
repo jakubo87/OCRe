@@ -25,7 +25,7 @@ struct MyHash
 
 
 //variables
-double T=0.2; //threshold for contrast, to be worked on later
+double T=0.5; //threshold for contrast, to be worked on later
 
 //const
 const std::vector<point> dir_prox {

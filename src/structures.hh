@@ -7,8 +7,8 @@
 #include <cmath>
 #include <iostream>
 
-int MaskW=13;
-int MaskH=20;
+int MaskW=20;
+int MaskH=30;
 
 using X = int;
 using Y = int;

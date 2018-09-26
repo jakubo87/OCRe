@@ -49,10 +49,28 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
   }
 
   return pixels;//std::move(pixels); Move will probably not do, as the problem size is unknown at compile time, but who knows...?
+}
+
+
+void matrix_to_image(matrix input, X width, Y height){
+
+  std::string filename( "..debug-images/image.jpg" );
+  gray8_image_t img ( width, height );
+
+// write data into image
+  for (int row=0;row<input.size();++row){
+    for (int col=0;col<input[row].size();++col){
+      *view(img).at(col, row)=input[row][col];
+    }
+}
+
+  write_view( filename
+          , view( img )
+          , jpeg_tag()
+          );
 
 
 }
-
     //fucking include -ljpeg at compiler!
 
 

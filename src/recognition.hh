@@ -35,9 +35,9 @@ auto make_masks(){ //TODO
         MaskH
       )
     );
-    std::cout << "mask finished for" << path << "!\n";
     int len=path.length();
     chars.push_back(path[len-5]);
+    std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
   }
   trans.first=masks;
   trans.second=chars;
@@ -45,7 +45,7 @@ auto make_masks(){ //TODO
 }
 
 
-
+double T_a=0.05; //threshault for accuracy
 
 auto similarity(matrix input,matrix comp){
   int H=input.size();
@@ -55,35 +55,34 @@ auto similarity(matrix input,matrix comp){
     for (int j=0;j<W;++j){
       //std::cout <<"input: "<< input[i][j] <<"\n";
       //std::cout <<"mask: " << comp[i][j] <<"\n";
-      //epsilon
-      if (std::abs(input[i][j]-comp[i][j])<T*255){
-        //std::cout<< "scored a point!\n";
-        ++result;
-	    }
+      //distance
+      result+=(input[i][j]-comp[i][j])*(input[i][j]-comp[i][j]);
 	  }
 	}
-  result*=100;
-  result/=H*W;//norm
-  return result;
+  //result*=100;
+  result/=H*H*W*W;//norm
+  return -(std::sqrt(result));
 }
 
 std::string recognise(gly_string gly_s, trans_tab trans){
   std::string result;
   for (auto g : gly_s){ //for each glyph in the sequence
     char best;
-    double score=0;
+    int init_score=-100;
+    double score=init_score;
     for (int i=0;i<trans.first.size();++i){
-      int curr= similarity(
+      auto curr= similarity(
         resize_matrix(
           g.to_matrix(),MaskW,MaskH),
           trans.first[i]);
-      std::cout << "char scored " << curr << "\n";
+      std::cout << "char " << trans.second[i] << " scored " << curr << "\n";
       if (curr>score){
         score =curr; //max
         best=trans.second[i]; //TODO identify the jpeg/mask as a char
       }
+      if (score==0) break;
     }
-    if (score>70){
+    if (score>init_score){
      result.push_back(best);
      std::cout << "added new char: " << best << "\n";
     }
