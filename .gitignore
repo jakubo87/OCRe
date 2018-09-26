@@ -1,5 +1,4 @@
-src/a.out
+*.out
 src/output.txt
 debug-images/*
-a.out
-output.txt
+*output.txt
