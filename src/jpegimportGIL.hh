@@ -47,7 +47,7 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
     pixels.push_back(line);
   }
 
-  return pixels;//std::move(pixels); Move will probably not do, as the problem size is unknown at compile time, but who knows...?
+  return std::move(pixels); //Move will probably not do, as the problem size is unknown at compile time, but who knows...?
 }
 
 int count=0;

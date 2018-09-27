@@ -7,6 +7,7 @@
 #include <string>
 #include "gly_scan.hh"
 #include <algorithm>
+#include <numeric>
 #include "jpegimportGIL.hh"
 #include <filesystem>
 #include <boost/filesystem.hpp>
@@ -53,6 +54,8 @@ auto similarity(M && input,C && comp){
   int H=input.size();
   int W=input[0].size();
   int result=0;
+
+  /* the easy way
   for (int i=0;i<H;++i){
     for (int j=0;j<W;++j){
       //std::cout <<"input: "<< input[i][j] <<"\n";
@@ -61,6 +64,30 @@ auto similarity(M && input,C && comp){
       result+=(input[i][j]-comp[i][j])*(input[i][j]-comp[i][j]);
 	  }
 	}
+	*/
+  //the hard way
+	//used 2 accumulates here to not get race conditions from simultaneously writing to accum value
+	//hopefully to be used in a parallel way-> execution policy parallel: std::execution::par_unseq
+	//in more civilised days...
+  std::vector<int> rows(input.size());
+  std::transform(input.begin(), input.end(), comp.begin(), rows.begin() ,
+    //lambda to fill row sum vector
+    [&](const auto & /*vector*/ v1, const auto & v2){
+      std::vector<int> cols(v1.size()); //temporary vector
+      std::transform(v1.begin(),v1.end(),v2.begin(), cols.begin(),
+        //lambda to fill col sum vector
+        [&](const auto & i1, const auto & i2){
+          return (i1-i2)*(i1-i2);
+        }
+      );
+      return std::accumulate(cols.begin(), cols.end(),0);
+      }
+    );
+  result= std::accumulate(rows.begin(), rows.end(), 0);
+
+
+
+
   //result*=100;
   result/=H*H*W*W;//norm
   return -(std::sqrt(result));
@@ -68,25 +95,28 @@ auto similarity(M && input,C && comp){
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 template<class G, class T>
-std::string recognise(G && gly_s, T && tran){
-  std::vector<xy_char> pos_c;
-  for (auto g : gly_s){ //for each glyph in the sequence
-    auto c= g.recognize(tran); //c is pair of char and confidence
-    if (c.second>-100){
-     pos_c.push_back(xy_char{g.left(),g.bottom(),c.first});
-     std::cout << "added new char: " << c.first << "\n";
+decltype(auto) recognise(G && gly_s, T && tran){
+
+//first find composite glyphs to be fused and resize the container
+
+// secondly sort the string. It's unsorted due to scanning order (linewise top->bottom), so the taller letters always go first
+  //sort glyphs by x
+  std::sort(gly_s.begin(),gly_s.end(), [&](auto & m, auto & n){return m.left()<n.left();});
+  std::string res;
+  res.reserve(gly_s.size());
+
+//lastly translate the glyphs to chars
+  //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
+  std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
+    [&](auto & g){
+      const auto & c= g.recognize(tran); //c is pair of char and confidence
+      if (c.second>-100){
+        return c.first;
+      }
+      return '_';
     }
-  }
-  //sort by x for each line - assuming there is only one line to translate
-  std::sort(pos_c.begin(),pos_c.end(), [&](auto & m, auto & n){return m.x<n.x;});
-
-  //assuming multiple lines are read at once ...
-  //TODO eventually, possibly never
-
-  std::string result;
-  for (auto & e : pos_c)
-    result+=e.c;
-  return result;
+  );
+  return std::move(res);
   //TODO finding new lines, empty lines and empty spaces.
 }
 

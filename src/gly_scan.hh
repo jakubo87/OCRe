@@ -5,9 +5,12 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <numeric>
+#include <boost/filesystem.hpp>
 #include "structures.hh"
 #include "jpegimportGIL.hh"
-#include "recognition.hh"
+
+//#include "recognition.hh"
 
 
 //forward declarations
@@ -15,6 +18,12 @@ class glyph;
 //the string of glyphs
 using gly_string = std::vector<glyph>;
 template<class M> decltype(auto) gly_scan(M && input);
+
+//using matrix = std::vector<std::vector<int>>;
+using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
+
+
+template<class M, class C> auto similarity(M && input,C && comp);
 
 
 //needed for hashing of composite structures
@@ -31,7 +40,6 @@ struct MyHash
     return h1 ^ (h2 << 1); // or use boost::hash_combine (see Discussion)
   }
 };
-
 
 
 //variables
@@ -52,12 +60,54 @@ const std::vector<point> dir_prox {
 
 
 
-//black pixels of a glyph ...for fast checks if in glyph or not
+template<class M, class C>
+auto similarity(M && input,C && comp){
+  int H=input.size();
+  int W=input[0].size();
+  int result=0;
+  //the hard way
+	//used 2 accumulates here to not get race conditions from simultaneously writing to accum value
+	//hopefully to be used in a parallel way-> execution policy parallel: std::execution::par_unseq
+	//in more civilised days...
+  std::vector<int> rows(input.size());
+  std::transform(input.begin(), input.end(), comp.begin(), rows.begin() ,
+    //lambda to fill row sum vector
+    [&](const auto & /*vector*/ v1, const auto & v2){
+      std::vector<int> cols(v1.size()); //temporary vector
+      std::transform(v1.begin(),v1.end(),v2.begin(), cols.begin(),
+        //lambda to fill col sum vector
+        [&](const auto & i1, const auto & i2){
+          return (i1-i2)*(i1-i2);
+        }
+      );
+      return std::accumulate(cols.begin(), cols.end(),0);
+      }
+    );
+  result= std::accumulate(rows.begin(), rows.end(), 0);
+  result/=H*H*W*W;//norm
+  return -(std::sqrt(result));
+}
+
+
+
+
+
+
+
+
+
+
+
+////////////////////
+/////GLYPH CLASS////
+////////////////////
+//glyph: connected black pixels...
 class glyph{
 public:
   //ctor
   template<class M>
   glyph(Y y,X x, M && input)
+  //glyph(Y y,X x, const matrix & input)
   :_top(y),_left(x), _bottom(y), _right(x) //init variables
   {findall(std::forward<M>(input));} //top will remain, bottom, left and right can change
 
@@ -67,7 +117,7 @@ public:
   }
 
 
-  matrix to_matrix(){
+  decltype(auto) to_matrix() const {
   //initialize the matrix containing only the glyph
     matrix m;
     for (int i=0;i<_bottom-_top+1;++i){
@@ -81,7 +131,7 @@ public:
     });
   //for testing
     //matrix_to_image(m);
-    return m;
+    return std::move(m);
   }
 
 //TODO
@@ -89,8 +139,8 @@ public:
     _data.insert(_data.end(),other._data.begin(), other._data.end());
   }
 
-//TODO
-  std::pair<char,int> recognize(const trans_tab & trans){ //std::string because if nothing fits the string can be empty
+  template<class T>
+  std::pair<char,int> recognize(T && trans) const {
     char best=' ';
     int init_score=-100;
     double score=init_score;
@@ -125,7 +175,6 @@ public:
     X _left; //leftmost pixel (column)
     Y _bottom;
     X _right;
-    //(_xl,_yt) does not need to be contained later on
     //std::unordered_set<point,MyHash> _data;
     std::vector<point> _data;
 
@@ -169,7 +218,7 @@ public:
 
 
 
-//algorithm, scan for glyphs, outputs a rvalue vector of glyphs aka gly_string
+//algorithm, scan for glyphs, outputs an rvalue vector of glyphs aka gly_string
 template<class M>
 decltype(auto) gly_scan(M && input){
   int height=input.size();
@@ -199,15 +248,71 @@ decltype(auto) gly_scan(M && input){
 }
 
 
-//comments
-/* to avoid checks if glyphs need to be unified i first scan the whole glyph via density connection
-possibly object to change
+// recognition part
 
-idea
-scan through all the black pixels and label them. if they happen to connect use the smaller label on both and erase the larger label
+//to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
+trans_tab make_masks(){
+  // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
+  //->vector of ascii char matrixes to compare with
+  trans_tab trans;
+  std::vector<char> chars;
+  std::vector<matrix> masks;
+  std::string path = "../Trainingimages";
 
-*/
+  for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
+    std::string path=p.path().string();
+    masks.push_back(
+      resize_matrix(
+        gly_scan(
+          boost_gil_read_img(path))
+            .back()
+            .to_matrix(),
+        MaskW,
+        MaskH
+      )
+    );
+    int len=path.length();
+    chars.push_back(path[len-5]);
+    //std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
+  }
+  trans.first=masks;
+  trans.second=chars;
+  return trans;
+}
 
 
+
+
+//using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
+template<class G, class T>
+decltype(auto) recognise(G && gly_s, T && tran){
+
+//first find composite glyphs to be fused and resize the container
+
+// secondly sort the string. It's unsorted due to scanning order (linewise top->bottom), so the taller letters always go first
+  //sort glyphs by x
+  std::sort(gly_s.begin(),gly_s.end(), [&](auto & m, auto & n){return m.left()<n.left();});
+  std::string res;
+  res.reserve(gly_s.size());
+
+//lastly translate the glyphs to chars
+  //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
+  std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
+    [&](auto & g){
+      const auto & c= g.recognize(tran); //c is pair of char and confidence
+      if (c.second>-100){
+        return c.first;
+      }
+      return '_';
+    }
+  );
+  return std::move(res);
+  //TODO finding new lines, empty lines and empty spaces.
+}
+
+
+
+
+//recognition end
 
 #endif

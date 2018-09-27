@@ -2,7 +2,7 @@
 #include "jpegimportGIL.hh"
 #include "gly_scan.hh"
 #include "writetofile.hh"
-#include "recognition.hh"
+//#include "recognition.hh"
 #include <future>
 
 int main(){
@@ -17,12 +17,14 @@ int main(){
 //extract glyphs from the image
   //auto glyphs= gly_scan(pixels);
 //write glyphs to vector
-  auto  text =recognise(
-                gly_scan(
-                  boost_gil_read_img("../Testimages/test_text.jpg")),
-                trans.get());
-//write to file
-  writetofile(text);
+  writetofile(
+    recognise(
+      gly_scan(
+        boost_gil_read_img("../Testimages/test_text.jpg")
+      ),
+    trans.get()
+    )
+  );
   return 0;
 }
 
