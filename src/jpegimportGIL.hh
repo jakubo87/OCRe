@@ -18,7 +18,6 @@ using namespace boost::gil;
 
 //read and scale image
 //TODO improve contrast + other stuff
-//TODO generalize to rgb pictures! atm only grayscale 8bit
 
 decltype(auto) boost_gil_read_img(const std::string & fname)
 {
@@ -53,7 +52,8 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
 
 int count=0;
 
-void matrix_to_image(matrix input){
+template<class M>
+void matrix_to_image(M && input){
 
   std::string filename( "../debug-images/image" );
   filename+=std::to_string(count++);

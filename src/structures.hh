@@ -7,7 +7,6 @@
 #include <cmath>
 #include <iostream>
 #include <utility>
-#include "gly_scan.hh"
 
 using X = int;
 using Y = int;
@@ -39,8 +38,8 @@ struct xy_char{
 //global
 //std::vector<matrix> masks;
 
-
-decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){
+template<class M>
+decltype(auto) resize_matrix(M && input, X tar_w, Y tar_h){
   Y cur_h=input.size();
   X cur_w=input[0].size();
 //ratio only for compile time known stuff...
@@ -50,7 +49,7 @@ decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){
 //  std::cout <<"tar_w:"<<tar_w<<" tar_h:"<<tar_h<<"\n";
 //  std::cout <<"Dx:"<<Dx<<" Dy:"<<Dy<<"\n";
   //initialize resuling matrix
-  matrix res;
+  M res;
   //std::cout << "got a problem?\n";
   for (int i=0;i<tar_h;++i)
     res.push_back(std::vector<int> (tar_w));
@@ -65,7 +64,7 @@ decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){
       for (int dx=0;dx<Dx;++dx)
         for (int dy=0;dy<Dy;++dy)
           res[i*Dy+dy][j*Dx+dx]=input[i][j];
-        //mathematical solution not useful here...
+        //accumulating solution not useful here...
         //  res[i*Dy+dy][j*Dx+dx]+=input[i][j]*Dx*Dy;
       //std::cout << "entry: " <<j*Dx <<" "<<i*Dy <<" is now " <<res[i*Dy][j*Dx]<<"\n";
     }

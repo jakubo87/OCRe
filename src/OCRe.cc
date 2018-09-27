@@ -2,7 +2,6 @@
 #include "jpegimportGIL.hh"
 #include "gly_scan.hh"
 #include "writetofile.hh"
-#include "structures.hh"
 #include "recognition.hh"
 #include <future>
 

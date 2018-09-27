@@ -9,10 +9,18 @@
 #include "jpegimportGIL.hh"
 #include "recognition.hh"
 
+
+//forward declarations
+class glyph;
+//the string of glyphs
+using gly_string = std::vector<glyph>;
+template<class M> decltype(auto) gly_scan(M && input);
+
+
+//needed for hashing of composite structures
 bool operator==(const point & lhs, const point & rhs) {
     return lhs.x == rhs.x && lhs.y == rhs.y;
 }
-
 //Hash function for combined types
 struct MyHash
 {
@@ -48,9 +56,10 @@ const std::vector<point> dir_prox {
 class glyph{
 public:
   //ctor
-  glyph(Y y,X x, matrix input)
+  template<class M>
+  glyph(Y y,X x, M && input)
   :_top(y),_left(x), _bottom(y), _right(x) //init variables
-  {findall(input);} //top will remain, bottom, left and right can change
+  {findall(std::forward<M>(input));} //top will remain, bottom, left and right can change
 
   bool contains(point p){
     //if (_data.find(point{x,y})!=_data.end()) return true;
@@ -122,7 +131,8 @@ public:
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
-  void findall(matrix input){
+  template<class M>
+  void findall(M && input){
     //_data.insert(point{_left,_top});
     _data.push_back(point{_left,_top});
     std::vector<point> queue;
@@ -157,11 +167,11 @@ public:
   }
 };
 
-//the string of glyphs
-using gly_string = std::vector<glyph>;
 
-//algorithm, scan for glyphs
-gly_string gly_scan(const matrix & input){
+
+//algorithm, scan for glyphs, outputs a rvalue vector of glyphs aka gly_string
+template<class M>
+decltype(auto) gly_scan(M && input){
   int height=input.size();
   int width=input[0].size();
   gly_string text; //
@@ -185,7 +195,7 @@ gly_string gly_scan(const matrix & input){
   }
 
   std::cout << "found "<< text.size() << " glyphs in image.\n";
-  return text;
+  return std::move(text);
 }
 
 

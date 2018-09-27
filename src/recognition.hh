@@ -12,10 +12,13 @@
 #include <boost/filesystem.hpp>
 #include <utility>
 
+using gly_string = std::vector<glyph>;
+
+using matrix = std::vector<std::vector<int>>;
 using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
-auto make_masks(){ //TODO
+trans_tab make_masks(){
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
   trans_tab trans;
@@ -45,7 +48,8 @@ auto make_masks(){ //TODO
 
 double T_a=0.05; //threshault for accuracy
 
-auto similarity(matrix input,matrix comp){
+template<class M, class C>
+auto similarity(M && input,C && comp){
   int H=input.size();
   int W=input[0].size();
   int result=0;
@@ -63,8 +67,8 @@ auto similarity(matrix input,matrix comp){
 }
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
-
-std::string recognise(gly_string & gly_s, const trans_tab & tran){
+template<class G, class T>
+std::string recognise(G && gly_s, T && tran){
   std::vector<xy_char> pos_c;
   for (auto g : gly_s){ //for each glyph in the sequence
     auto c= g.recognize(tran); //c is pair of char and confidence
