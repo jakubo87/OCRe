@@ -6,19 +6,22 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-
-int MaskW=20;
-int MaskH=30;
+#include <utility>
+#include "gly_scan.hh"
 
 using X = int;
 using Y = int;
 
+X MaskW=20;
+Y MaskH=30;
 
 // because array wants a size at compile time
 
 //"Matrix" is a preliminary solution to later generalize the signatures
 //will probably go from [][] to .at(x,y)
-using matrix= std::vector<std::vector<int>>;
+using matrix = std::vector<std::vector<int>>;
+
+
 
 struct point{
   X x;
@@ -26,15 +29,15 @@ struct point{
 };
 
 struct xy_char{
-  int x; //maybe better to have usign long..?
-  int y;
-  char value;
+  X x; //maybe better to have usign long..?
+  Y y;
+  char c;
   //opt padding or reduce x...?
 };
 
 
 //global
-std::vector<matrix> masks;
+//std::vector<matrix> masks;
 
 
 decltype(auto) resize_matrix(const matrix & input, X tar_w, Y tar_h){

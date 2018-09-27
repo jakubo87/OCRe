@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "structures.hh"
 #include "jpegimportGIL.hh"
+#include "recognition.hh"
 
 bool operator==(const point & lhs, const point & rhs) {
     return lhs.x == rhs.x && lhs.y == rhs.y;
@@ -46,7 +47,7 @@ const std::vector<point> dir_prox {
 //black pixels of a glyph ...for fast checks if in glyph or not
 class glyph{
 public:
-
+  //ctor
   glyph(Y y,X x, matrix input)
   :_top(y),_left(x), _bottom(y), _right(x) //init variables
   {findall(input);} //top will remain, bottom, left and right can change
@@ -58,28 +59,44 @@ public:
 
 
   matrix to_matrix(){
-
   //initialize the matrix containing only the glyph
-  matrix m;
-  for (int i=0;i<_bottom-_top+1;++i){
-    m.push_back(std::vector<int> (_right-_left+1));
-    std::fill(m[i].begin(),m[i].end(),255);
-  }
-  std::for_each(_data.begin(),_data.end(),[&](auto i){
+    matrix m;
+    for (int i=0;i<_bottom-_top+1;++i){
+      m.push_back(std::vector<int> (_right-_left+1));
+      std::fill(m[i].begin(),m[i].end(),255);
+    }
+    std::for_each(_data.begin(),_data.end(),[&](auto i){
     //std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
     //std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
-    m[i.y-_top][i.x-_left]=0;
-  });
+      m[i.y-_top][i.x-_left]=0;
+    });
+  //for testing
+    //matrix_to_image(m);
+    return m;
+  }
 
-  //testing
-  //matrix_to_image(m);
+//TODO
+  void fuse(glyph other){ //in case of i and ä and the likes
+    _data.insert(_data.end(),other._data.begin(), other._data.end());
+  }
 
-  return m;
-}
-
-
-
-
+//TODO
+  std::pair<char,int> recognize(const trans_tab & trans){ //std::string because if nothing fits the string can be empty
+    char best=' ';
+    int init_score=-100;
+    double score=init_score;
+    auto comp= resize_matrix(this->to_matrix(),MaskW,MaskH);
+    //matrix_to_image(comp); //for debugging and demontration purposes
+    for (int i=0;i<trans.first.size();++i){
+      auto curr= similarity(comp,trans.first[i]);
+      if (curr>score){
+        score =curr; //max
+        best=trans.second[i];
+      }
+      if (score==0) break;
+    }
+    return std::make_pair(best,score);
+  }
 
 
 
@@ -140,10 +157,8 @@ public:
   }
 };
 
-
 //the string of glyphs
 using gly_string = std::vector<glyph>;
-
 
 //algorithm, scan for glyphs
 gly_string gly_scan(const matrix & input){

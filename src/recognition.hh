@@ -12,9 +12,7 @@
 #include <boost/filesystem.hpp>
 #include <utility>
 
-
-using trans_tab=std::pair<std::vector<matrix>,std::vector<char>>;
-
+using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 
 //to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
 auto make_masks(){ //TODO
@@ -24,7 +22,7 @@ auto make_masks(){ //TODO
   std::vector<char> chars;
   std::vector<matrix> masks;
   std::string path = "../Trainingimages";
-  //for all images in ../Testimages
+
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     std::string path=p.path().string();
     masks.push_back(
@@ -64,28 +62,26 @@ auto similarity(matrix input,matrix comp){
   return -(std::sqrt(result));
 }
 
-std::string recognise(gly_string gly_s, trans_tab trans){
-  std::string result;
+//using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
+
+std::string recognise(gly_string & gly_s, const trans_tab & tran){
+  std::vector<xy_char> pos_c;
   for (auto g : gly_s){ //for each glyph in the sequence
-    char best;
-    int init_score=-100;
-    double score=init_score;
-    auto comp= resize_matrix(g.to_matrix(),MaskW,MaskH);
-    matrix_to_image(comp);
-    for (int i=0;i<trans.first.size();++i){
-      auto curr= similarity(comp,trans.first[i]);
-      std::cout << "char " << trans.second[i] << " scored " << curr << "\n";
-      if (curr>score){
-        score =curr; //max
-        best=trans.second[i];
-      }
-      if (score==0) break;
-    }
-    if (score>init_score){
-     result.push_back(best);
-     std::cout << "added new char: " << best << "\n";
+    auto c= g.recognize(tran); //c is pair of char and confidence
+    if (c.second>-100){
+     pos_c.push_back(xy_char{g.left(),g.bottom(),c.first});
+     std::cout << "added new char: " << c.first << "\n";
     }
   }
+  //sort by x for each line - assuming there is only one line to translate
+  std::sort(pos_c.begin(),pos_c.end(), [&](auto & m, auto & n){return m.x<n.x;});
+
+  //assuming multiple lines are read at once ...
+  //TODO eventually, possibly never
+
+  std::string result;
+  for (auto & e : pos_c)
+    result+=e.c;
   return result;
   //TODO finding new lines, empty lines and empty spaces.
 }
