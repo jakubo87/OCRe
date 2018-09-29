@@ -1,5 +1,5 @@
 #include <iostream>
-#include "jpegimportGIL.hh"
+#include "images.hh"
 #include "gly_scan.hh"
 #include "writetofile.hh"
 //#include "recognition.hh"
@@ -9,6 +9,7 @@ int main(){
 
 //prepare masks for recognition
   auto trans = std::async(std::launch::async, make_masks);
+//  auto trans = make_masks();
 
 //read the greyscale image
   //auto pixels=boost_gil_read_img("../Testimages/test_text.jpg");  //7007.jpg"); //
@@ -18,11 +19,10 @@ int main(){
   //auto glyphs= gly_scan(pixels);
 //write glyphs to vector
   writetofile(
-    recognise(
-      gly_scan(
-        boost_gil_read_img("../Testimages/test_text.jpg")
-      ),
-    trans.get()
+    find_lines(
+      boost_gil_read_img("../Testimages/test_text.jpg"),
+      trans.get()
+//    trans
     )
   );
   return 0;

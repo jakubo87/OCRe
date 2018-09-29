@@ -76,7 +76,7 @@ decltype(auto) resize_matrix(M && input, X tar_w, Y tar_h){
     // smaller target has to get lower values<-> higher accumulation rate
       e=std::round(e*Dx*Dy); //Jacobi
 */
-  return res;
+  return std::move(res);
 }
 
 #endif

@@ -8,7 +8,7 @@
 #include <numeric>
 #include <boost/filesystem.hpp>
 #include "structures.hh"
-#include "jpegimportGIL.hh"
+#include "images.hh"
 
 //#include "recognition.hh"
 
@@ -104,6 +104,10 @@ auto similarity(M && input,C && comp){
 //glyph: connected black pixels...
 class glyph{
 public:
+
+  using self_t  = glyph;
+  using Cont    = std::vector<point>;
+
   //ctor
   template<class M>
   glyph(Y y,X x, M && input)
@@ -111,9 +115,18 @@ public:
   :_top(y),_left(x), _bottom(y), _right(x) //init variables
   {findall(std::forward<M>(input));} //top will remain, bottom, left and right can change
 
-  bool contains(point p){
+
+  bool contains(const point & p) const{
     //if (_data.find(point{x,y})!=_data.end()) return true;
     return (std::find(_data.begin(), _data.end(), p)!=_data.end());
+  }
+
+  bool operator==(const self_t & other)const {
+    return other.contains(*(_data.begin()));
+  }
+
+  bool operator!=(const self_t & other)const {
+    return !(*this==other);
   }
 
 
@@ -135,12 +148,14 @@ public:
   }
 
 //TODO
-  void fuse(glyph other){ //in case of i and ä and the likes
-    _data.insert(_data.end(),other._data.begin(), other._data.end());
+  void fuse(const glyph other){ //in case of i and ä and the likes
+    std::for_each(other.data().begin(), other.data().end(),[&](auto p){
+      this->insert(p);
+    });
   }
 
   template<class T>
-  std::pair<char,int> recognize(T && trans) const {
+  std::pair<char,int> to_char(T && trans) const {
     char best=' ';
     int init_score=-100;
     double score=init_score;
@@ -168,7 +183,7 @@ public:
   int h_size(){return right()-left();}
   int v_size(){return bottom()-top();}
 
-  const auto & data(){return _data;}
+  const Cont & data() const{return _data;}
 
   private:
     Y _top; //line of the glyph (also top)
@@ -176,7 +191,17 @@ public:
     Y _bottom;
     X _right;
     //std::unordered_set<point,MyHash> _data;
-    std::vector<point> _data;
+    Cont _data;
+
+
+  void insert(point p){
+    if(!contains(p))
+      _data.push_back(p);
+      if (p.x<_left) _left=p.x;
+      else if(p.x>_right)  _right=p.x;
+      if (p.y>_bottom) _bottom=p.y;
+      else if(p.y<_top) _top=p.y;
+  }
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
@@ -196,25 +221,12 @@ public:
             //new black pixel in queue and in glyph
             queue.push_back(point{x,y});
             //_data.insert(point{x,y}); //wont go into the queue a second time
-            _data.push_back(point{x,y}); //wont go into the queue a second time
-            //writing edge rows and lines (bottom, top, ..)
-            if (x<_left) _left=x;
-            if(x>_right) {
-              _right=x;
-             // std::cout << "right value changed to " << _right << "\n";
-            }
-            if (y>_bottom){
-              _bottom=y; //top not necessary, as we are going linewise top to bottom
-             // std::cout << "bottom value changed to " << _bottom << "\n";
-            }
-            if(y<_top) _top=y;
-           // std::cout << "adding point " << x << " " << y  << "to the list\n";
-
+            insert(point{x,y}); //wont go into the queue a second time
           }
       }
     };
   }
-};
+}; //end class glyph
 
 
 
@@ -243,14 +255,24 @@ decltype(auto) gly_scan(M && input){
     }
   }
 
+
+  //find composite glyphs to be fused and resize the container
+  for (auto & g1 : text){
+    //scan the area above the glyph
+    for (auto & g2 : text){
+      if (g2.left()<=g1.right() && g2.right()>g1.left() && g2!=g1 && g2.bottom()>g1.top()-2) //g2 is the suspected upper one
+        g1.fuse(g1);
+    }
+  }
+
   std::cout << "found "<< text.size() << " glyphs in image.\n";
-  return std::move(text);
+  return text;
 }
 
 
 // recognition part
 
-//to be in a separate task before rest begins -> thread parallel and joined before all the recognition stuff begins (after glyphing)
+
 trans_tab make_masks(){
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
@@ -265,7 +287,7 @@ trans_tab make_masks(){
       resize_matrix(
         gly_scan(
           boost_gil_read_img(path))
-            .back()
+            .back() //last element TODO  will need to fuse all the glyphs here
             .to_matrix(),
         MaskW,
         MaskH
@@ -284,10 +306,11 @@ trans_tab make_masks(){
 
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
-template<class G, class T>
-decltype(auto) recognise(G && gly_s, T && tran){
+template<class M,class T>
+decltype(auto) recognise(point UL, point LR, M && m, T && tran){
 
-//first find composite glyphs to be fused and resize the container
+//scan the line for glyphs
+  auto gly_s=gly_scan(m);
 
 // secondly sort the string. It's unsorted due to scanning order (linewise top->bottom), so the taller letters always go first
   //sort glyphs by x
@@ -299,14 +322,14 @@ decltype(auto) recognise(G && gly_s, T && tran){
   //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
   std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
     [&](auto & g){
-      const auto & c= g.recognize(tran); //c is pair of char and confidence
+      const auto & c= g.to_char(tran); //c is pair of char and confidence
       if (c.second>-100){
         return c.first;
       }
       return '_';
     }
   );
-  return std::move(res);
+  return res;
   //TODO finding new lines, empty lines and empty spaces.
 }
 

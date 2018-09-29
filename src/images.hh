@@ -10,6 +10,7 @@
   #include <string>
   //#include "recognition.hh"
   #include "structures.hh"
+  #include "gly_scan.hh"
 
 //Globals
 
@@ -47,7 +48,7 @@ decltype(auto) boost_gil_read_img(const std::string & fname)
     pixels.push_back(line);
   }
 
-  return std::move(pixels); //Move will probably not do, as the problem size is unknown at compile time, but who knows...?
+  return pixels; //Move will probably not do, as the problem size is unknown at compile time, but who knows...?
 }
 
 int count=0;
@@ -75,6 +76,16 @@ void matrix_to_image(M && input){
 
 }
     //fucking include -ljpeg at compiler!
+
+
+
+template<class M, class T>
+std::string find_lines(M && m, T && t){
+  std::string s;
+  s+=recognise(point{0,0},point{m[0].size()-1,m.size()-1},std::forward<M>(m), t); //dummy
+
+  return s;
+}
 
 
 
