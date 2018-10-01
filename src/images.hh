@@ -1,5 +1,5 @@
-#ifndef __JPEFIMPORTGIL_H_INCLUDED__
-#define __JPEFIMPORTGIL_H_INCLUDED__
+#ifndef __IMAGES_H_INCLUDED__
+#define __IMAGES_H_INCLUDED__
 
   #include <iostream>
   #include <boost/gil/extension/io/jpeg/old.hpp> //<--- this???
@@ -15,16 +15,16 @@
 //Globals
 
 
-using namespace boost::gil;
+//using namespace boost::gil;
 
 //read and scale image
 //TODO improve contrast + other stuff
 
-decltype(auto) boost_gil_read_img(const std::string & fname)
-{
-  gray8_image_t img;
+//decltype(auto)
+matrix read_img_to_matrix(const std::string & fname){
+  boost::gil::gray8_image_t img;
   //jpeg_read_image(fname, img); //jpeg_read_image() ?
-  read_and_convert_image(fname, img, jpeg_tag());
+  boost::gil::read_and_convert_image(fname, img, boost::gil::jpeg_tag());
 
 //  std::cout << "Read complete, got an image " << img.width()
 //            << " by " << img.height() << " pixels\n";
@@ -61,17 +61,17 @@ void matrix_to_image(M && input){
   filename+=".jpg";
   int H=input.size();
   int W=input[0].size();
-  gray8_image_t img ( W, H );
+  boost::gil::gray8_image_t img ( W, H );
 
 // write data into image
   for (int row=0;row<H;++row){
     for (int col=0;col<W;++col){
-      *view(img).at(col, row)=input[row][col];
+      *boost::gil::view(img).at(col, row)=input[row][col];
     }
 }
 
  // write_view( filename, view( img ), jpeg_tag());
-  jpeg_write_view( filename, view( img ));
+  boost::gil::jpeg_write_view( filename, view( img ));
   //std::cout << "turned a matrix to an image.\n";
 
 }
@@ -82,9 +82,11 @@ void matrix_to_image(M && input){
 template<class M, class T>
 std::string find_lines(M && m, T && t){
   std::string s;
-  s+=recognise(point{0,0},point{m[0].size()-1,m.size()-1},std::forward<M>(m), t); //dummy
+  s+=recognise(point{0,0},point{static_cast<X>(m[0].size()-1),static_cast<Y>(m.size()-1)},std::forward<M>(m), t); //dummy
 
+  std::cout << s << "\n";
   return s;
+
 }
 
 

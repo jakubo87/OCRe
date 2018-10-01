@@ -7,17 +7,21 @@
 #include <algorithm>
 #include <numeric>
 #include <boost/filesystem.hpp>
-#include "structures.hh"
 #include "images.hh"
+#include "structures.hh"
+
 
 //#include "recognition.hh"
 
 
 //forward declarations
 class glyph;
-//the string of glyphs
+//a container of glyphs (unordered)
 using gly_string = std::vector<glyph>;
 template<class M> decltype(auto) gly_scan(M && input);
+
+extern matrix read_img_to_matrix(const std::string & fname);
+template<class M> void matrix_to_image(M && input);
 
 //using matrix = std::vector<std::vector<int>>;
 using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
@@ -84,7 +88,8 @@ auto similarity(M && input,C && comp){
       }
     );
   result= std::accumulate(rows.begin(), rows.end(), 0);
-  result/=H*H*W*W;//norm
+  result/=H*W;//norm
+  std::cout << "score= " << -std::sqrt(result) << "\n";
   return -(std::sqrt(result));
 }
 
@@ -143,8 +148,8 @@ public:
       m[i.y-_top][i.x-_left]=0;
     });
   //for testing
-    //matrix_to_image(m);
-    return std::move(m);
+    matrix_to_image(m);
+    return m;
   }
 
 //TODO
@@ -257,14 +262,24 @@ decltype(auto) gly_scan(M && input){
 
 
   //find composite glyphs to be fused and resize the container
-  for (auto & g1 : text){
-    //scan the area above the glyph
-    for (auto & g2 : text){
-      if (g2.left()<=g1.right() && g2.right()>g1.left() && g2!=g1 && g2.bottom()>g1.top()-2) //g2 is the suspected upper one
-        g1.fuse(g1);
+  //TODO quick'n'dirty
+  for (int i1=0;i1<text.size();++i1){
+    for (int i2=0;i2<text.size();++i2){
+      if (text[i2].left()<=text[i1].right() &&
+          text[i2].right()>=text[i1].left()&&
+          i2!=i1 &&
+          text[i2].bottom()<text[i1].top()+2
+          )
+        { //i2 is the suspected upper one
+          text[i1].fuse(text[i2]);
+          text.erase(text.begin()+i2);
+          std::cout << "fused glyphs!\n";
+          --i1;
+          --i2;
+        } //reverse order would be more performant and less repartitioning
     }
   }
-
+  text.shrink_to_fit();
   std::cout << "found "<< text.size() << " glyphs in image.\n";
   return text;
 }
@@ -282,13 +297,12 @@ trans_tab make_masks(){
   std::string path = "../Trainingimages";
 
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
-    std::string path=p.path().string();
+    const std::string path=p.path().string();
     masks.push_back(
       resize_matrix(
         gly_scan(
-          boost_gil_read_img(path))
-            .back() //last element TODO  will need to fuse all the glyphs here
-            .to_matrix(),
+          read_img_to_matrix(path)
+        ).back().to_matrix(),
         MaskW,
         MaskH
       )
@@ -324,8 +338,10 @@ decltype(auto) recognise(point UL, point LR, M && m, T && tran){
     [&](auto & g){
       const auto & c= g.to_char(tran); //c is pair of char and confidence
       if (c.second>-100){
+        std::cout << "char found: " << c.first <<"\n";
         return c.first;
       }
+      std::cout << "found an unrecognizable glyph!\n";
       return '_';
     }
   );

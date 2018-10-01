@@ -20,7 +20,7 @@ int main(){
 //write glyphs to vector
   writetofile(
     find_lines(
-      boost_gil_read_img("../Testimages/test_text.jpg"),
+      read_img_to_matrix("../Testimages/test_text.jpg"),
       trans.get()
 //    trans
     )
