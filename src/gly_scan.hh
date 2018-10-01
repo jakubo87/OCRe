@@ -323,14 +323,12 @@ trans_tab make_masks(){
 template<class M,class T>
 decltype(auto) recognise(point UL, point LR, M && m, T && tran){
 
-//scan the line for glyphs
+//first scan the line for glyphs
   auto gly_s=gly_scan(m);
 
 // secondly sort the string. It's unsorted due to scanning order (linewise top->bottom), so the taller letters always go first
-  //sort glyphs by x
   std::sort(gly_s.begin(),gly_s.end(), [&](auto & m, auto & n){return m.left()<n.left();});
-  std::string res;
-  res.reserve(gly_s.size());
+  std::string res (gly_s.size(),'_');
 
 //lastly translate the glyphs to chars
   //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
