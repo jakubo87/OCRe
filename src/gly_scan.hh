@@ -344,8 +344,18 @@ decltype(auto) recognise(point UL, point LR, M && m, T && tran){
     }
   );
   res+="\n";
+
+  //empty spaces - (not by pink floyd...)
+  int i=0;
+  for (auto it=gly_s.begin();it!=gly_s.end()-1;++it){
+    int tot_sq = ((it+1)->right()-it->left())*((it+1)->right()-it->left()); //squared distance of 2 conseq chars
+    int sum_let_sq = ((it)->left()-it->right()+((it+1)->left()-(it+1)->right()))
+                    *((it)->left()-it->right()+((it+1)->left()-(it+1)->right()));
+    if (tot_sq-sum_let_sq>sum_let_sq*1.1)
+      res.insert(++i," ");
+    ++i;
+  }
   return res;
-  //TODO finding empty spaces.
 }
 
 
