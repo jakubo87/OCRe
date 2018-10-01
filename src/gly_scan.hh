@@ -89,7 +89,7 @@ auto similarity(M && input,C && comp){
     );
   result= std::accumulate(rows.begin(), rows.end(), 0);
   result/=H*W;//norm
-  std::cout << "score= " << -std::sqrt(result) << "\n";
+  //std::cout << "score= " << -std::sqrt(result) << "\n";
   return -(std::sqrt(result));
 }
 
@@ -162,7 +162,7 @@ public:
   template<class T>
   std::pair<char,int> to_char(T && trans) const {
     char best=' ';
-    int init_score=-100;
+    int init_score=-200;
     double score=init_score;
     auto comp= resize_matrix(this->to_matrix(),MaskW,MaskH);
     //matrix_to_image(comp); //for debugging and demontration purposes
@@ -337,16 +337,17 @@ decltype(auto) recognise(point UL, point LR, M && m, T && tran){
   std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
     [&](auto & g){
       const auto & c= g.to_char(tran); //c is pair of char and confidence
-      if (c.second>-100){
-        std::cout << "char found: " << c.first <<"\n";
-        return c.first;
-      }
-      std::cout << "found an unrecognizable glyph!\n";
-      return '_';
+      //if (c.second>-100){
+      std::cout << "char found: " << c.first <<"\n";
+      return c.first;
+      //}
+      //std::cout << "found an unrecognizable glyph!\n";
+      //return '_';
     }
   );
+  res+="\n";
   return res;
-  //TODO finding new lines, empty lines and empty spaces.
+  //TODO finding empty spaces.
 }
 
 
