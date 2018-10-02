@@ -321,13 +321,13 @@ trans_tab make_masks(){
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 template<class M,class T>
-decltype(auto) recognise(point UL, point LR, M && m, T && tran){
+decltype(auto) recognise(M && m, T && tran){
 
 //first scan the line for glyphs
   auto gly_s=gly_scan(m);
 
 // secondly sort the string. It's unsorted due to scanning order (linewise top->bottom), so the taller letters always go first
-  std::sort(gly_s.begin(),gly_s.end(), [&](auto & m, auto & n){return m.left()<n.left();});
+  std::sort(gly_s.begin(),gly_s.end(), [&](auto & l, auto & n){return l.left()<n.left();});
   std::string res (gly_s.size(),'_');
 
 //lastly translate the glyphs to chars
@@ -350,7 +350,7 @@ decltype(auto) recognise(point UL, point LR, M && m, T && tran){
   for (auto it=gly_s.begin();it!=gly_s.end()-1;++it){
     int tot_sq = ((it+1)->right()-it->left())*((it+1)->right()-it->left()); //squared distance of 2 conseq chars
     int sum_let_sq = ((it)->left()-it->right()+((it+1)->left()-(it+1)->right()))
-                    *((it)->left()-it->right()+((it+1)->left()-(it+1)->right()));
+                    *((it)->left()-it->right()+((it+1)->left()-(it+1)->right())); //sign is - but doesnt matter due to squaring
     if (tot_sq-sum_let_sq>sum_let_sq*1.1)
       res.insert(++i," ");
     ++i;
