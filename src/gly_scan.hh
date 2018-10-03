@@ -11,7 +11,8 @@
 #include "structures.hh"
 
 
-//#include "recognition.hh"
+//variables
+const double T=0.3; //threshold for contrast, to be worked on later
 
 
 //forward declarations
@@ -46,8 +47,6 @@ struct MyHash
 };
 
 
-//variables
-double T=0.5; //threshold for contrast, to be worked on later
 
 //const
 const std::vector<point> dir_prox {
@@ -320,8 +319,8 @@ trans_tab make_masks(){
 
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
-template<class M,class T>
-decltype(auto) recognise(M && m, T && tran){
+template<class M,class Tt>
+decltype(auto) recognise(M && m, Tt && tran){
 
 //first scan the line for glyphs
   auto gly_s=gly_scan(m);
@@ -351,7 +350,7 @@ decltype(auto) recognise(M && m, T && tran){
     int tot_sq = ((it+1)->right()-it->left())*((it+1)->right()-it->left()); //squared distance of 2 conseq chars
     int sum_let_sq = ((it)->left()-it->right()+((it+1)->left()-(it+1)->right()))
                     *((it)->left()-it->right()+((it+1)->left()-(it+1)->right())); //sign is - but doesnt matter due to squaring
-    if (tot_sq-sum_let_sq>sum_let_sq*1.1)
+    if (tot_sq-sum_let_sq>sum_let_sq*1.5)
       res.insert(++i," ");
     ++i;
   }

@@ -1,4 +1,4 @@
 in ./src
-g++ -g OCRe.cc -ljpeg -lboost_system -lboost_filesystem -lpthread
+clang++ -g OCRe.cc -ljpeg -lboost_system -lboost_filesystem -lpthread
 
 cmake not ready, yet

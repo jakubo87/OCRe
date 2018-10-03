@@ -11,8 +11,8 @@
 using X = int;
 using Y = int;
 
-X MaskW=20;
-Y MaskH=30;
+X MaskW=23;
+Y MaskH=37;
 
 // because array wants a size at compile time
 
