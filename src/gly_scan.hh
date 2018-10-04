@@ -293,7 +293,7 @@ trans_tab make_masks(){
   trans_tab trans;
   std::vector<char> chars;
   std::vector<matrix> masks;
-  std::string path = "../Trainingimages";
+  std::string path = "../TrainingimagesASCII";
 
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     const std::string path=p.path().string();
@@ -306,8 +306,24 @@ trans_tab make_masks(){
         MaskH
       )
     );
+    //crop path and ending from 'path'
+    //turn string to int and to corresponding ASCII char
     int len=path.length();
-    chars.push_back(path[len-5]);
+    std::string st;
+    int end=len;//again: 1 behind last
+    int start=0;
+    for (int i=len;i>=0;--i){
+      if (path[i]=='.') end=i;
+      if (path[i]=='/'){
+        start=i+1;
+        break;
+      }
+    }
+    for (int i=start;i<end;++i)
+      st.push_back(path[i]);
+
+    chars.push_back(static_cast<char>(std::stoi(st)));
+
     //std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
   }
   trans.first=masks;
