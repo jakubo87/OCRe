@@ -86,7 +86,7 @@ std::string find_lines(M && m, Tt && t){
   const X hsize=m[0].size();
   const Y vsize=m.size();
 
-  std::cout << "hsize: "<< hsize << " vsize: " << vsize << "\n";
+  //std::cout << "hsize: "<< hsize << " vsize: " << vsize << "\n";
 
   std::vector<int> rows(vsize);
   X x_min = hsize;
@@ -101,13 +101,13 @@ std::string find_lines(M && m, Tt && t){
           x_min=x-2;
         }
       }
-      std::cout << "x_min: " << x_min <<"\n";
-      std::cout << "x_max: " << x_max <<"\n";
+     // std::cout << "x_min: " << x_min <<"\n";
+     // std::cout << "x_max: " << x_max <<"\n";
 
       for (X x=hsize-2;x>x_max;--x){
-        std::cout << "x: " <<x<< "\n";
+        //std::cout << "x: " <<x<< "\n";
         if (v[x]<255*T)
-          x_max=x+3;
+          x_max=x+2;
       }
       //Y
       if (x_max>x_min && //if not a white line
@@ -122,13 +122,13 @@ std::string find_lines(M && m, Tt && t){
 
   std::vector<std::pair<Y,Y>> lines; //min-max pairs of Y
 
-//debug
+/*debug
   int l=0;
   for (auto & a  : rows){
     std::cout << "l:"<< l <<" " << a << "\n";
     ++l;
   }
-
+*/
   Y y_min=0;
   Y y_max=0;//max is 1 beyond the last needed pixel!!
 
@@ -136,15 +136,15 @@ std::string find_lines(M && m, Tt && t){
     if (rows[y]==255){
       //for white lines
       if (rows[y+1]==0){
-        y_min=y-1;
+        y_min=y;
       }
     }
     //for black lines
     else{
       if (rows[y+1]==255){
-        y_max=y+3; //to avoid black pixels on the edge causing issues...
+        y_max=y+2; //to avoid black pixels on the edge causing issues...
         lines.push_back(std::make_pair(y_min,y_max)); //keep in mind, that min<max but higher in pos
-        std::cout << "y_max found!\n";
+        //std::cout << "y_max found!\n";
       }
     }
   }
@@ -156,7 +156,7 @@ std::string find_lines(M && m, Tt && t){
   for (auto & a : lines){
     std::cout << "y_min: " << a.first << " y_max: " << a.second << "\n";
   }
-
+//
 /*
 maybe a horizontal iterator might be in order... ->locator
 however... it may not be very performant to leave aside
@@ -188,6 +188,8 @@ however... it may not be very performant to leave aside
   std::string res;
   for (auto & s : text_lines)
     res+=s;
+
+  std::cout << res << "\n";
   return res;
 
 }

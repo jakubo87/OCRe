@@ -12,8 +12,8 @@
 
 
 //variables
-const double T=0.3; //threshold for contrast, to be worked on later
-
+const double T=0.6; //threshold for contrast, to be worked on later
+//the larger T the more is involved, the better the recognition, but the more outliers can occurr
 
 //forward declarations
 class glyph;
@@ -147,7 +147,7 @@ public:
       m[i.y-_top][i.x-_left]=0;
     });
   //for testing
-    matrix_to_image(m);
+    //matrix_to_image(m);
     return m;
   }
 
@@ -272,14 +272,14 @@ decltype(auto) gly_scan(M && input){
         { //i2 is the suspected upper one
           text[i1].fuse(text[i2]);
           text.erase(text.begin()+i2);
-          std::cout << "fused glyphs!\n";
+          //std::cout << "fused glyphs!\n";
           --i1;
           --i2;
         } //reverse order would be more performant and less repartitioning
     }
   }
   text.shrink_to_fit();
-  std::cout << "found "<< text.size() << " glyphs in image.\n";
+  //std::cout << "found "<< text.size() << " glyphs in image.\n";
   return text;
 }
 
