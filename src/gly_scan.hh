@@ -12,7 +12,7 @@
 
 
 //variables
-const double T=0.6; //threshold for contrast, to be worked on later
+const double T=0.5; //threshold for contrast, to be worked on later
 //the larger T the more is involved, the better the recognition, but the more outliers can occurr
 
 //forward declarations
@@ -147,7 +147,7 @@ public:
       m[i.y-_top][i.x-_left]=0;
     });
   //for testing
-    //matrix_to_image(m);
+    matrix_to_image(m);
     return m;
   }
 
@@ -211,6 +211,8 @@ public:
   //only to be used in the beginning when _x,_y is the first pixel to be touched
   template<class M>
   void findall(M && input){
+    const int height=input.size();
+    const int width=input[0].size();
     //_data.insert(point{_left,_top});
     _data.push_back(point{_left,_top});
     std::vector<point> queue;
@@ -220,7 +222,9 @@ public:
       for (auto i : dir_prox){ //check all the neighbours
         int x = queue[p].x+i.x;
         int y = queue[p].y+i.y;
-        if (!contains(point{x,y})) //only add pixels, that have not been visited before
+        if (x >=0 && x<width &&
+            y>=0 && y<height &&
+            !contains(point{x,y})) //only add pixels, that have not been visited before
           if(T*255>input[y][x]){
             //new black pixel in queue and in glyph
             queue.push_back(point{x,y});
@@ -351,7 +355,7 @@ decltype(auto) recognise(M && m, Tt && tran){
     [&](auto & g){
       const auto & c= g.to_char(tran); //c is pair of char and confidence
       //if (c.second>-100){
-      std::cout << "char found: " << c.first <<"\n";
+      //std::cout << "char found: " << c.first <<"\n";
       return c.first;
       //}
       //std::cout << "found an unrecognizable glyph!\n";
