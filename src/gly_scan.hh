@@ -12,6 +12,8 @@
 
 
 //variables
+const int WHITE =255;
+const int BLACK=0;
 const double T=0.5; //threshold for contrast, to be worked on later
 //the larger T the more is involved, the better the recognition, but the more outliers can occurr
 
@@ -28,7 +30,8 @@ template<class M> void matrix_to_image(M && input);
 using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 
 
-template<class M, class C> auto similarity(M && input,C && comp);
+template<class M> auto similarity(M && input,M && comp);
+template<class M> auto similarity2(M && input,M && comp);
 
 
 //needed for hashing of composite structures
@@ -63,8 +66,8 @@ const std::vector<point> dir_prox {
 
 
 
-template<class M, class C>
-auto similarity(M && input,C && comp){
+template<class M>
+auto similarity(M && input,M && comp){
   int H=input.size();
   int W=input[0].size();
   int result=0;
@@ -92,9 +95,70 @@ auto similarity(M && input,C && comp){
   return -(std::sqrt(result));
 }
 
+template<class P>
+auto eukl_dist(P && p1, P && p2){ //points basically
+  return std::sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+}
+
+template<class P>
+auto length(P && p){
+  return eukl_dist(std::forward<P>(p),point{0,0});
+}
 
 
+template<class M>
+auto similarity2(M && input, M && comp){
+  int H=input.size();
+  int W=input[0].size();
+  double dist=0;
 
+  //highly inefficient and highly redundant
+  //wanted some sort of dynamic time warping in 2d but thats not that easy im afraid
+  //2d-dtw would be very helpful if scanning whole areas instead of (resized) glyphs
+
+  //greedy algorithm
+
+  for (Y y1=0; y1<H;++y1){
+    for (X x1=0;x1<W;++x1){
+      //for white pixels the outside can be closest pixel
+      //for black pixels only inside
+      //have a full circle around of x1|y1 i.e. x2|y2 (relative coordinates)
+      if (input[y1][x1]>=WHITE){
+        double dist_min=std::min(std::min(x1+1,y1+1),std::min(W-x1,H-y1));
+        for (Y y2=-dist_min+1; y2<dist_min ;++y2){
+          for (X x2=-dist_min+1; x2<dist_min ;++x2){
+            if (comp[y1+y2][x1+x2]>=WHITE){
+              dist_min=std::min(dist_min, length(point{x2,y2}));
+              if (x2<-dist_min) x2=x1-dist_min; //only the negative part, positive has upper bound
+              if (y2<-dist_min) y2=y1-dist_min;
+
+            }
+          }
+        }
+        dist+=dist_min;
+      }
+      else{
+        double dist_min=W+H; //Max manhattan dist as an upper limit
+        for (Y y2=-dist_min+1; y2<dist_min ;++y2){
+          for (X x2=-dist_min+1; x2<dist_min ;++x2){
+            if (x1+x2>=0 && x1+x2<W &&
+                y1+y2>=0 && y1+y2<H)
+            {
+              if (comp[y1+y2][x1+x2]<WHITE*T)
+                dist_min=std::min(dist_min, length(point{x2,y2}));
+                if (x2<-dist_min) x2=x1-dist_min; //only the negative part, positive has upper bound
+                if (y2<-dist_min) y2=y1-dist_min;
+            }
+          }
+        }
+        dist+=dist_min;
+      }
+    }
+  }
+  dist/=H*W;//norm
+  //std::cout << "score= " << -std::sqrt(result) << "\n";
+  return -dist;
+}
 
 
 
@@ -166,7 +230,8 @@ public:
     auto comp= resize_matrix(this->to_matrix(),MaskW,MaskH);
     //matrix_to_image(comp); //for debugging and demontration purposes
     for (int i=0;i<trans.first.size();++i){
-      auto curr= similarity(comp,trans.first[i]);
+      //auto curr= similarity(comp,trans.first[i]);
+      auto curr= similarity2(comp,trans.first[i]);
       if (curr>score){
         score =curr; //max
         best=trans.second[i];
