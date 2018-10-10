@@ -124,7 +124,9 @@ auto similarity2(M && input, M && comp){
       //for black pixels only inside
       //have a full circle around of x1|y1 i.e. x2|y2 (relative coordinates)
       if (input[y1][x1]>=WHITE){
+        // distance to border as upper limit (outside is always white)
         double dist_min=std::min(std::min(x1+1,y1+1),std::min(W-x1,H-y1));
+        /*
         for (Y y2=-dist_min+1; y2<dist_min ;++y2){
           for (X x2=-dist_min+1; x2<dist_min ;++x2){
             if (comp[y1+y2][x1+x2]>=WHITE){
@@ -135,10 +137,35 @@ auto similarity2(M && input, M && comp){
             }
           }
         }
+      */
+        for (Y y2=0; y2<dist_min ;++y2){
+          for (X x2=0; x2<dist_min ;++x2){
+            if (comp[y1+y2][x1+x2]>=WHITE ||
+                comp[y1-y2][x1-x2]>=WHITE ||
+                comp[y1-y2][x1+x2]>=WHITE ||
+                comp[y1+y2][x1-x2]>=WHITE){
+              dist_min=std::min(dist_min, length(point{x2,y2}));
+            }
+          }
+        }
         dist+=dist_min;
       }
       else{
         double dist_min=W+H; //Max manhattan dist as an upper limit
+        for (Y y2=0; y2<dist_min ;++y2){
+          for (X x2=0; x2<dist_min ;++x2){
+            if (x1-x2>=0 && x1+x2<W &&
+                y1-y2>=0 && y1+y2<H){
+              if (comp[y1+y2][x1+x2]<WHITE*T ||
+                  comp[y1-y2][x1-x2]<WHITE*T ||
+                  comp[y1-y2][x1+x2]<WHITE*T ||
+                  comp[y1+y2][x1-x2]<WHITE*T){
+                dist_min=std::min(dist_min, length(point{x2,y2}));
+              }
+            }
+          }
+        }
+        /*
         for (Y y2=-dist_min+1; y2<dist_min ;++y2){
           for (X x2=-dist_min+1; x2<dist_min ;++x2){
             if (x1+x2>=0 && x1+x2<W &&
@@ -151,6 +178,8 @@ auto similarity2(M && input, M && comp){
             }
           }
         }
+        */
+
         dist+=dist_min;
       }
     }

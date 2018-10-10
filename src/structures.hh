@@ -19,6 +19,8 @@ Y MaskH=29;
 //"Matrix" is a preliminary solution to later generalize the signatures
 //will probably go from [][] to .at(x,y)
 using matrix = std::vector<std::vector<int>>;
+//ideas
+//template <class T> using matrix = std::vector<std::vector<T>>;
 
 
 
@@ -40,6 +42,7 @@ struct xy_char{
 
 template<class M>
 decltype(auto) resize_matrix(M && input, X tar_w, Y tar_h){
+//decltype(auto) resize_matrix(M && input, M && res ...){
   Y cur_h=input.size();
   X cur_w=input[0].size();
 //ratio only for compile time known stuff...

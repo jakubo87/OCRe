@@ -5,11 +5,11 @@
 
 
 \section {OCRe - Optical Character Recognition - experiment}
-This is a naive approach to optical character recognition, as one of the most important aspects in its modelling was simplicity. OCR is a widely used in reading road signs for translation and scanning documents - for the sake of digitalization and the ease of use with a computer, to automatically translate manuscripts of old languages in order to decypher it, or to make handwriting machine-readable. Therefore there are many projects out there that are highly complex and use multiple techniques to improve on their quality.
+This is a naive approach to optical character recognition, as one of the most important aspects in its creation was simplicity. OCR is a widely used from reading road signs on mobile phones for translation, scanning of documents - for the sake of digitalization and the ease of use with a computer, to automatically translate manuscripts of old languages in order to decypher them, or to make handwriting machine-readable. Therefore there are many projects out there that are highly complex and use multiple techniques of character recognition to improve on their quality.
 
 Nowadays many OCR-engines rely on neural networks, that deliver quite a good performance but need appropriate training beforehand. It is also sometimes needed to dive into the context of the text in order to clarify ambiguous possibilities. However, OCR cannot be done to 100\% accuracy as we will see later. Also I did not implement context or semantic word checking as it would have clearly gone beyond a university project to be done singlehandedly within half a semester.\newline
-The most known engine is certainly the Tesseract engine that is owned, and was open sourced, by Google.\newline
-There exist many other engines that are written in Python and use Keras/tensorflow for neural networks. Many of them are abandoned projects, though.
+The most known engine is certainly the Tesseract engine that is owned and was open sourced by Google.\newline
+There exist many other engines that are written in Python and use Keras/TensorFlow for neural networks. Many of them are abandoned projects, though.
 
 
 \subsection{choices made}
@@ -46,7 +46,7 @@ Masks: Masks are binarized matrices of fixed size, that are ready to be compared
 Lines: 2 dimensional subsets of the initial image. Again they could potentially be replaced by subviews in a later version.\newline
 
 Glyph: The class glyph contains a set of pixels, that are darker than a certain threshault T*255. They are obtained by gly_scan([line]). Upon discovering a new pixel the constructor issues the method findall(), that finds all directly connected pixels. This is an assumption, that may or may not be useful depending on the characterset and the quality of the scan.\newline
-Glyphs can be compared for equality, such that if a pixel is found in an existing glyph those 2 glyphs must be identical. Which is the logical conclusion of the before mentioned assumption.\newline
+Glyphs can be compared for equality, such that if any pixel is found in an existing glyph those 2 glyphs must be identical. Which is the logical conclusion of the before mentioned assumption.\newline
 For some characters like i or j (or ; or : respectively) glyphs must be fused, which poses another threat to the accuracy or in this case disambiguity as will be seen later on.\newline
 
 Translation Table: A translation table is the key to translate masks of glyphs into corresponding characters. It is being made in the thread 1 while the main thread issues the scanning of lines for glyphs.
@@ -116,7 +116,12 @@ Probably the most impacting factor in speed is the choice of similarity measure.
 
 The first one is highly parallelizable as every pixel is independent from one another, and needs to be visited only once. The second variant yields slightly better outcomes but is also a lot slower as the complexity goes from O(N) - with N being the number of pixels in a mask - to O(N*N*N). Even though not all pixels have to be repeatedly visited the second variant has a lot of if-clauses resulting in branching and therefore pipeline stalls and also possibly a lot of memory transactions. Maybe letting the program run into full N*N*N complexity and then pic the best would result in better performance due to hardware parallelization capacities such as AVX and fewer pipeline stalls, but that again was not the main concern here.
 
-It may prove to be interesting if some sort of 2 dimensional dynamic time warping algorithm was implemented to find the best fit for slightly offset masks aswell as provide a precise measure of how far off the image is. The variance over all the pixels could eradicate an offset and put more emphasis on the total structure of the pattern and the features and less on the relatively random occurrence of pixels. However the normal DTW algorithm for a 1 dimensional series is already O(N*N). If such an algorithm exists, it will hardly be better than O(N*N*N*N) which will have to be bought with considerably smaller masks.
+It may prove to be interesting if some sort of 2 dimensional dynamic time warping algorithm was implemented to find the best fit for slightly offset masks aswell as provide a precise measure of how far off the image is. The variance over all the pixels could eradicate an offset and put more emphasis on the total structure of the pattern and the features and less on the relatively random occurrence of pixels. However the normal DTW algorithm for a 1 dimensional series is already O(N*N). If such an algorithm exists, it will hardly be better than O(N*N*N*N) which will have to be bought with considerably smaller masks. However losing the information on position and ratio should provide a good enough approach with the second approach as the masks are already aligned, if the character is the correct one.
+
+\section {Why C++?}
+C++ has the benefit of having widespread use, well tested libraries and compilers that are well optimized, that can eat a lot of work at compilation time and really occupy a CPU's core. Its abstract template system can generalize a once used method for other data types and its type system is strict enough to halt the compiler to give beneficial feedback to the developer giving exact control instead of just letting minor irregularities pass by. In this case most of the parameters were only known at runtime, so that not many things can be modelled generally and folded and squared away by the compiler. Modern features like type deduction, operator overloading and the aforementioned template functions can make clean and overall precise, understandible and expressive code. 
+
+
 
 \end{document}
 

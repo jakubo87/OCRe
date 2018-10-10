@@ -1,0 +1,16 @@
+TODOs
+
+stream >> operatoren zur aufhübschung?
+
+Konzepte sind nomen mit ausdrücken
+operationen sind verben auf nomen
+
+
+systemdiagramm vereinfachen und dann reinzoomen, +  position in globalem kontext markieren (fenster) 
+
+eingaben und optionen
+(boost::(program)options)
+
+recognize ausweiten find lines unterordnen
+
+ transform (find_lines(image), line_strings, recognize)
