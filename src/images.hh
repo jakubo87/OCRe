@@ -1,21 +1,16 @@
-#ifndef __IMAGES_H_INCLUDED__
-#define __IMAGES_H_INCLUDED__
+#ifndef __IMAGES_HH_INCLUDED__
+#define __IMAGES_HH_INCLUDED__
 
   #include <iostream>
   #include <boost/gil/extension/io/jpeg/old.hpp> //<--- this???
-  //probably missing:
   //#include <boost/gil/extension/io/jpeg/tags.hpp>
   //#include <boost/gil/gil_all.hpp>
-  #include <array>
   #include <string>
   #include <numeric>
   #include <algorithm>
   #include <utility>
-  //#include "recognition.hh"
   #include "structures.hh"
-  #include "gly_scan.hh"
 
-//Globals
 
 //read and scale image
 //TODO improve contrast + other stuff
@@ -26,20 +21,12 @@ matrix read_img_to_matrix(const std::string & fname){
   //jpeg_read_image(fname, img); //jpeg_read_image() ?
   boost::gil::read_and_convert_image(fname, img, boost::gil::jpeg_tag());
 
-//  std::cout << "Read complete, got an image " << img.width()
-//            << " by " << img.height() << " pixels\n";
-//
-//  gil::gray8_pixel_t px = *const_view(img).at(33, 33);
-//  std::cout << "The pixel at 33,33 is "
-//            << (int)px[0] << '\n';
-
   int const height=img.height();
   int const width=img.width();
 
   //instantiating the matrix
-
-  matrix pixels;//={ {(width)} };
-  //copying the pixeldata (in case of there being some sort of proxy - thx c++)
+  matrix pixels;
+  //copying the pixeldata
   for (int i=0; i<height; ++i){
     std::vector<int> line (width);
     for (int j=0; j<width; ++j){
@@ -47,8 +34,7 @@ matrix read_img_to_matrix(const std::string & fname){
     }
     pixels.push_back(line);
   }
-
-  return pixels;
+  return pixels; //std::move(pixels);
 }
 
 //globally
@@ -175,15 +161,14 @@ however... it may not be very performant to leave aside
         [&](auto & v){
           n.push_back(std::vector<int> (x_max-x_min));
           std::transform(v.begin()+x_min,v.begin()+x_max,n.back().begin(),
-            [&](auto e){
-              return e;
+            [&](auto & e){
+              return std::move(e);
             }
         );
       });
       //turn to string
-      return recognise(std::move(n), t); //dummy
+      return recognise(std::move(n), t);
     }
-
   );
   //putting it together
   std::string res;

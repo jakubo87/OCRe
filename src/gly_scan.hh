@@ -1,5 +1,5 @@
-#ifndef __GLY_SCAN_H_INCLUDED__
-#define __GLY_SCAN_H_INCLUDED__
+#ifndef __GLY_SCAN_HH_INCLUDED__
+#define __GLY_SCAN_HH_INCLUDED__
 
 #include <unordered_set>
 #include <vector>
@@ -11,22 +11,22 @@
 #include "images.hh"
 #include "structures.hh"
 
+//from structures.hh
 extern const int WHITE;
 extern const int BLACK;
 extern const double T;
 
-//the larger T the more is involved, the better the recognition, but the more outliers can occurr
+//from images.hh
+extern matrix read_img_to_matrix(const std::string & fname);
+//extern template<class M> void to_image(M && input);
+
 
 //forward declarations
 class glyph;
-//a container of glyphs (unordered)
 using gly_string = std::vector<glyph>;
 template<class M> decltype(auto) gly_scan(M && input);
 
-extern matrix read_img_to_matrix(const std::string & fname);
-template<class M> void to_image(M && input);
 
-//using matrix = std::vector<std::vector<int>>;
 using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
 
 
@@ -92,7 +92,7 @@ auto similarity(M && input,M && comp){
   result= std::accumulate(rows.begin(), rows.end(), 0);
   result/=H*W;//norm
   //std::cout << "score= " << -std::sqrt(result) << "\n";
-  return -(std::sqrt(result));
+  return -std::sqrt(result);
 }
 
 template<class P>
@@ -201,6 +201,11 @@ public:
     });
   }
 
+  //constructs a matrix from a glyph
+  decltype(auto) to_matrix() const {
+    return matrix(data());
+  }
+
     int left() const   {return _left;}
     int right() const  {return _right;}
     int top() const    {return _top;}
@@ -232,7 +237,9 @@ public:
   void findall(M && input,point p){
     const int height=input.size();
     const int width=std::begin(input)->size();
-    //_data.insert(point{_left,_top});
+
+    //std::cout << height << " "<< input[0][0] <<"\n";
+
     insert(p);
     std::vector<point> queue;
     //initial value to get it started
@@ -261,7 +268,7 @@ public:
     int init_score=-500;
     double score=init_score;
 
-    auto mask = resize_matrix(m,MaskH, MaskW);
+    auto mask = matrix(std::forward<M>(m),MaskH, MaskW);
     //to_image(mask); //for debugging and demontration purposes
     for (int i=0;i<trans.first.size();++i){
       auto curr= similarity(mask,trans.first[i]);
@@ -284,6 +291,8 @@ decltype(auto) gly_scan(M && input){
   int height=input.size();
   int width=std::begin(input)->size();
   gly_string text; //
+
+  //std::cout << "gly scan" << input[0][0] <<"\n";
 
   for (Y y=0;y<height; ++y){ // for every line
     for (X x=0;x<width;++x){ // for every pixel in that line
@@ -331,23 +340,20 @@ decltype(auto) gly_scan(M && input){
 // recognition part
 
 
-trans_tab make_masks(){
+decltype(auto) make_masks(){
   // for both jpegs in folder Trainingimages make a mask according to ascii numbers of chars
   //->vector of ascii char matrixes to compare with
-  trans_tab trans;
   std::vector<char> chars;
   std::vector<matrix> masks;
-  std::string path = "../TrainingimagesASCII_serif";
+  std::string path = "../TrainingimagesASCII";
 
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     const std::string path=p.path().string();
     masks.push_back(
-      resize_matrix(
-        to_matrix(
+      matrix(//resize
           gly_scan(
             read_img_to_matrix(path))
-          .back().data()
-        ),
+          .back().to_matrix(),
         MaskH,MaskW
       )
     );
@@ -371,12 +377,9 @@ trans_tab make_masks(){
 
     //std::cout << "mask finished for" << path << " -> "<< path[len-5] << "\n";
   }
-  trans.first=masks;
-  trans.second=chars;
+  trans_tab trans=std::make_pair(masks,chars);
   return trans;
 }
-
-
 
 
 //using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
@@ -394,7 +397,7 @@ decltype(auto) recognise(M && m, Tt && tran){
   //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
   std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
     [&](auto & g){
-      return to_char(to_matrix(g.data()),tran).first;
+      return to_char(g.to_matrix(),tran).first;
       //}
       //std::cout << "found an unrecognizable glyph!\n";
       //return '_';
