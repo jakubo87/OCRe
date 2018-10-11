@@ -48,13 +48,14 @@ matrix read_img_to_matrix(const std::string & fname){
     pixels.push_back(line);
   }
 
-  return pixels; //Move will probably not do, as the problem size is unknown at compile time, but who knows...?
+  return pixels;
 }
 
+//globally
 int count=0;
 
 template<class M>
-void matrix_to_image(M && input){
+void to_image(M && input){
 
   std::string filename( "../debug-images/image" );
   filename+=std::to_string(count++);

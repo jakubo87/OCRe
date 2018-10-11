@@ -7,14 +7,14 @@
 #include <algorithm>
 #include <numeric>
 #include <boost/filesystem.hpp>
+#include <climits>
 #include "images.hh"
 #include "structures.hh"
 
+extern const int WHITE;
+extern const int BLACK;
+extern const double T;
 
-//variables
-const int WHITE =255;
-const int BLACK=0;
-const double T=0.5; //threshold for contrast, to be worked on later
 //the larger T the more is involved, the better the recognition, but the more outliers can occurr
 
 //forward declarations
@@ -24,7 +24,7 @@ using gly_string = std::vector<glyph>;
 template<class M> decltype(auto) gly_scan(M && input);
 
 extern matrix read_img_to_matrix(const std::string & fname);
-template<class M> void matrix_to_image(M && input);
+template<class M> void to_image(M && input);
 
 //using matrix = std::vector<std::vector<int>>;
 using trans_tab = std::pair<std::vector<matrix>,std::vector<char>>;
@@ -62,16 +62,16 @@ const std::vector<point> dir_prox {
     point{1,-1},
     point{1,0},
     point{1,1}
-}; //direct proximity //TODO can lead to segvfault if last pixel hori. or ver. is black
+}; //direct proximity
 
 
 
 template<class M>
 auto similarity(M && input,M && comp){
   int H=input.size();
-  int W=input[0].size();
+  int W=std::begin(input)->size();
   int result=0;
-  //the hard way
+
 	//used 2 accumulates here to not get race conditions from simultaneously writing to accum value
 	//hopefully to be used in a parallel way-> execution policy parallel: std::execution::par_unseq
 	//in more civilised days...
@@ -116,7 +116,6 @@ auto similarity2(M && input, M && comp){
   //wanted some sort of dynamic time warping in 2d but thats not that easy im afraid
   //2d-dtw would be very helpful if scanning whole areas instead of (resized) glyphs
 
-  //greedy algorithm
 
   for (Y y1=0; y1<H;++y1){
     for (X x1=0;x1<W;++x1){
@@ -126,18 +125,6 @@ auto similarity2(M && input, M && comp){
       if (input[y1][x1]>=WHITE){
         // distance to border as upper limit (outside is always white)
         double dist_min=std::min(std::min(x1+1,y1+1),std::min(W-x1,H-y1));
-        /*
-        for (Y y2=-dist_min+1; y2<dist_min ;++y2){
-          for (X x2=-dist_min+1; x2<dist_min ;++x2){
-            if (comp[y1+y2][x1+x2]>=WHITE){
-              dist_min=std::min(dist_min, length(point{x2,y2}));
-              if (x2<-dist_min) x2=x1-dist_min; //only the negative part, positive has upper bound
-              if (y2<-dist_min) y2=y1-dist_min;
-
-            }
-          }
-        }
-      */
         for (Y y2=0; y2<dist_min ;++y2){
           for (X x2=0; x2<dist_min ;++x2){
             if (comp[y1+y2][x1+x2]>=WHITE ||
@@ -165,21 +152,6 @@ auto similarity2(M && input, M && comp){
             }
           }
         }
-        /*
-        for (Y y2=-dist_min+1; y2<dist_min ;++y2){
-          for (X x2=-dist_min+1; x2<dist_min ;++x2){
-            if (x1+x2>=0 && x1+x2<W &&
-                y1+y2>=0 && y1+y2<H)
-            {
-              if (comp[y1+y2][x1+x2]<WHITE*T)
-                dist_min=std::min(dist_min, length(point{x2,y2}));
-                if (x2<-dist_min) x2=x1-dist_min; //only the negative part, positive has upper bound
-                if (y2<-dist_min) y2=y1-dist_min;
-            }
-          }
-        }
-        */
-
         dist+=dist_min;
       }
     }
@@ -207,14 +179,11 @@ public:
 
   //ctor
   template<class M>
-  glyph(Y y,X x, M && input)
-  //glyph(Y y,X x, const matrix & input)
-  :_top(y),_left(x), _bottom(y), _right(x) //init variables
-  {findall(std::forward<M>(input));} //top will remain, bottom, left and right can change
+  glyph(point p, M && input)
+  {findall(std::forward<M>(input),p);} //top will remain, bottom, left and right can change
 
 
   bool contains(const point & p) const{
-    //if (_data.find(point{x,y})!=_data.end()) return true;
     return (std::find(_data.begin(), _data.end(), p)!=_data.end());
   }
 
@@ -226,68 +195,24 @@ public:
     return !(*this==other);
   }
 
-
-  decltype(auto) to_matrix() const {
-  //initialize the matrix containing only the glyph
-    matrix m;
-    for (int i=0;i<_bottom-_top+1;++i){
-      m.push_back(std::vector<int> (_right-_left+1));
-      std::fill(m[i].begin(),m[i].end(),255);
-    }
-    std::for_each(_data.begin(),_data.end(),[&](auto i){
-    //std::cout <<"i.y=" << i.y <<"top="<< _top << "\n";
-    //std::cout <<"i.x=" << i.x <<"left="<< _left << "\n";
-      m[i.y-_top][i.x-_left]=0;
-    });
-  //for testing
-    matrix_to_image(m);
-    return m;
-  }
-
-//TODO
-  void fuse(const glyph other){ //in case of i and ä and the likes
+  void fuse(const glyph other){ //in case of i, j, ;, : and the likes
     std::for_each(other.data().begin(), other.data().end(),[&](auto p){
       this->insert(p);
     });
   }
 
-  template<class T>
-  std::pair<char,int> to_char(T && trans) const {
-    char best=' ';
-    int init_score=-200;
-    double score=init_score;
-    auto comp= resize_matrix(this->to_matrix(),MaskW,MaskH);
-    //matrix_to_image(comp); //for debugging and demontration purposes
-    for (int i=0;i<trans.first.size();++i){
-      //auto curr= similarity(comp,trans.first[i]);
-      auto curr= similarity2(comp,trans.first[i]);
-      if (curr>score){
-        score =curr; //max
-        best=trans.second[i];
-      }
-      if (score==0) break;
-    }
-    return std::make_pair(best,score);
-  }
-
-
-
-
-  Y top(){ return _top;}
-  X left(){ return _left;}
-  Y bottom(){return _bottom;}
-  X right(){return _right;}
-  //assuming that 0,0 is the left top corner of the image
-  int h_size(){return right()-left();}
-  int v_size(){return bottom()-top();}
+    int left() const   {return _left;}
+    int right() const  {return _right;}
+    int top() const    {return _top;}
+    int bottom() const {return _bottom;}
 
   const Cont & data() const{return _data;}
 
   private:
-    Y _top; //line of the glyph (also top)
-    X _left; //leftmost pixel (column)
-    Y _bottom;
-    X _right;
+    int _left=INT_MAX;
+    int _right=INT_MIN;
+    int _top=INT_MAX;
+    int _bottom=INT_MAX;
     //std::unordered_set<point,MyHash> _data;
     Cont _data;
 
@@ -295,27 +220,27 @@ public:
   void insert(point p){
     if(!contains(p))
       _data.push_back(p);
-      if (p.x<_left) _left=p.x;
-      else if(p.x>_right)  _right=p.x;
-      if (p.y>_bottom) _bottom=p.y;
-      else if(p.y<_top) _top=p.y;
+    if (p.x<_left)    _left=p.x;
+    if (p.x>_right)   _right=p.x;
+    if (p.y<_top)     _top=p.y;
+    if (p.y>_bottom)  _bottom=p.y;
   }
 
 
   //only to be used in the beginning when _x,_y is the first pixel to be touched
   template<class M>
-  void findall(M && input){
+  void findall(M && input,point p){
     const int height=input.size();
-    const int width=input[0].size();
+    const int width=std::begin(input)->size();
     //_data.insert(point{_left,_top});
-    _data.push_back(point{_left,_top});
+    insert(p);
     std::vector<point> queue;
     //initial value to get it started
-    queue.push_back(point{_left, _top}); //yet-to-be-checked, actually not a queue, but a lifo
-    for (int p=0;p<queue.size();++p){
-      for (auto i : dir_prox){ //check all the neighbours
-        int x = queue[p].x+i.x;
-        int y = queue[p].y+i.y;
+    queue.push_back(p); //yet-to-be-checked, actually not a queue, but a lifo
+    for (int i=0;i<queue.size();++i){
+      for (auto d : dir_prox){ //check all the neighbours
+        int x = queue[i].x+d.x;
+        int y = queue[i].y+d.y;
         if (x >=0 && x<width &&
             y>=0 && y<height &&
             !contains(point{x,y})) //only add pixels, that have not been visited before
@@ -330,13 +255,34 @@ public:
   }
 }; //end class glyph
 
+  template<class M, class Tr>
+  decltype(auto) to_char(M && m, Tr && trans){
+    char best=' ';
+    int init_score=-500;
+    double score=init_score;
+
+    auto mask = resize_matrix(m,MaskH, MaskW);
+    //to_image(mask); //for debugging and demontration purposes
+    for (int i=0;i<trans.first.size();++i){
+      auto curr= similarity(mask,trans.first[i]);
+      //auto curr= similarity2(comp,trans.first[i]);
+      if (curr>score){
+        score =curr; //max
+        best=trans.second[i];
+      }
+      //if (score==0) break;
+    }
+    return std::move(std::make_pair(best,score));
+  }
+
+
 
 
 //algorithm, scan for glyphs, outputs an rvalue vector of glyphs aka gly_string
 template<class M>
 decltype(auto) gly_scan(M && input){
   int height=input.size();
-  int width=input[0].size();
+  int width=std::begin(input)->size();
   gly_string text; //
 
   for (Y y=0;y<height; ++y){ // for every line
@@ -351,7 +297,7 @@ decltype(auto) gly_scan(M && input){
         //find all pixels for the new glyph through neighbourhood
         if (!cont){
           //std::cout << "adding new glyph for coord" << x <<" "<< y <<"\n";
-          text.push_back(glyph(y,x, input)); //create new glyph and add to vector
+          text.push_back(glyph(point{x,y}, input)); //create new glyph and add to vector
         }
       }
     }
@@ -359,7 +305,7 @@ decltype(auto) gly_scan(M && input){
 
 
   //find composite glyphs to be fused and resize the container
-  //TODO quick'n'dirty
+
   for (int i1=0;i1<text.size();++i1){
     for (int i2=0;i2<text.size();++i2){
       if (text[i2].left()<=text[i1].right() &&
@@ -391,17 +337,18 @@ trans_tab make_masks(){
   trans_tab trans;
   std::vector<char> chars;
   std::vector<matrix> masks;
-  std::string path = "../TrainingimagesASCII";
+  std::string path = "../TrainingimagesASCII_serif";
 
   for (auto & p : boost::filesystem::directory_iterator(path)){ //C++17 & -lstc++fs for linking
     const std::string path=p.path().string();
     masks.push_back(
       resize_matrix(
-        gly_scan(
-          read_img_to_matrix(path)
-        ).back().to_matrix(),
-        MaskW,
-        MaskH
+        to_matrix(
+          gly_scan(
+            read_img_to_matrix(path))
+          .back().data()
+        ),
+        MaskH,MaskW
       )
     );
     //crop path and ending from 'path'
@@ -447,10 +394,7 @@ decltype(auto) recognise(M && m, Tt && tran){
   //std::transform(std::execution::par_unseq,gly_s.begin(), gly_s.end(), s.begin() //since c++17
   std::transform(gly_s.begin(), gly_s.end(), res.begin(),                           //before c++17
     [&](auto & g){
-      const auto & c= g.to_char(tran); //c is pair of char and confidence
-      //if (c.second>-100){
-      //std::cout << "char found: " << c.first <<"\n";
-      return c.first;
+      return to_char(to_matrix(g.data()),tran).first;
       //}
       //std::cout << "found an unrecognizable glyph!\n";
       //return '_';
@@ -461,10 +405,9 @@ decltype(auto) recognise(M && m, Tt && tran){
   //empty spaces - (not by pink floyd...)
   int i=0;
   for (auto it=gly_s.begin();it!=gly_s.end()-1;++it){
-    int tot_sq = ((it+1)->right()-it->left())*((it+1)->right()-it->left()); //squared distance of 2 conseq chars
-    int sum_let_sq = ((it)->left()-it->right()+((it+1)->left()-(it+1)->right()))
-                    *((it)->left()-it->right()+((it+1)->left()-(it+1)->right())); //sign is - but doesnt matter due to squaring
-    if (tot_sq-sum_let_sq>sum_let_sq*1.5)
+    int tot = ((it+1)->right()-it->left());
+    int sum_let = (it->right()-it->left()+(it+1)->right()-(it+1)->left());
+    if (tot>sum_let+5)
       res.insert(++i," ");
     ++i;
   }
