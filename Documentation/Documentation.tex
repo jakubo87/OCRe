@@ -45,6 +45,13 @@ For loading of images and filesystem operations (iterating through the training-
 
 
 \section {System Model}
+  \subsection{System Diagram}
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{./systemdiagramm.png}
+\end{figure}
+\newpage
+
   \subsection{Concepts}
 \begin{itemize}
 \item Image: The image to be read. JPEG (i.e. '.jpg') is the only image format supported up to this point.\newline
@@ -53,25 +60,59 @@ For loading of images and filesystem operations (iterating through the training-
 read\_image([path]) -> matrix & loads image from disk and copies the image's contents into a newly created matrix.\\
 \hline
 \end{tabular}
+\vspace{1cm}
 
 
 \item Matrix: A matrix is a 2 dimensional image representation. For ease of use I used (std::)vectors of vectors of integers. Up until the binarization, that happens in gly\_scan(), most matrices could potentially be replaced by (sub)views of the actual image loaded to reduce copying. (some work provided)\newline
-\begin{tabular}{c c}
-to char(matrix, translation\_table) -> matrix & compares the matrix with the masks in the translation matrix to find the best fit 
+\begin{tabular}{ m{6cm} m{7cm} }
+\hline
+to char(matrix, translation\_table) -> matrix & compares the matrix with the masks in the translation matrix to find the best fit\\
+\hline
+matrix(matrix input, height, width) -> matrix & creates new matrix and stretches or compresses the areas\\ 
+\hline
+matrix(Set)-> matrix & creates a matrix from a set of points\\
+\hline
 \end{tabular} 
+\vspace{1cm}
 
 \item Masks: Masks are binarized matrices of fixed size, that are ready to be compared to one another.\newline
+all expressions that are valid for matrices, are valid for masks
+\vspace{1cm}
+
 
 \item Lines: 2 dimensional subsets of the initial image. Again they could potentially be replaced by subviews in a later version.\newline
+all expressions that are valid for matrices are, valid for lines
+\vspace{1cm}
 
-\item Glyph: The class glyph contains a set of pixels, that are darker than a certain threshault $T*255$. They are obtained by gly\_scan([line]). Upon discovering a new pixel the constructor issues the method findall(), that finds all directly connected pixels. This is an assumption, that may or may not be useful depending on the characterset and the quality of the scan.\newline
+
+\item Glyph: The class glyph contains a set of pixels, that are darker than a certain threshault $T*255$. They are obtained by gly\_scan([line]). Upon discovering a new pixel the constructor issues the method findall(), that finds all directly connected pixels. This is an assumption, that may or may not be useful depending on the character set and the quality of the scan.\newline
 Glyphs can be compared for equality, such that if any pixel is found in an existing glyph those 2 glyphs must be identical. Which is the logical conclusion of the before mentioned assumption.\newline
 For some characters like i or j (or ; or : respectively) glyphs must be fused, which poses another threat to the accuracy or in this case disambiguity as will be seen later on.\newline
+\begin{tabular}{ m{6cm} m{7cm} }
+\hline
+glyph1==glyph2 -> bool & checks for equality. returns true, if one pixel of one glyph is contained in the other\\
+\hline
+glyph1.fuse(glyph2) -> void & fuses glyph 2 with glyph1\\ 
+\hline
+glyph.contains(point) -> bool & returns true, if pixel is contained in the glyph\\
+\hline
+\end{tabular}
+\vspace{1cm}
 
-\item Translation Table: A translation table is the key to translate masks of glyphs into corresponding characters. It is being made in the thread 1 while the main thread issues the scanning of lines for glyphs.
+
+\item Translation Table: A translation table is the key to translate masks of glyphs into corresponding characters. It is being made in the thread 1 while the main thread issues the scanning of lines for glyphs.\newline
+only needed by to\_char() as an argument. is is being created by make\_masks();
+\vspace{1cm}
 
 \item similarity measure: To compare 2 masks an abstract distance measure is being needed. In the basic form, every pixel that is not the same for the input and the mask to be tested against, gets a penalty point. The mask that has fewest points for the input mask is most likely to be the correct character.\newline
-more advanced approaches pay a heavy toll on timely performance as we will see later as every pixel may go through several iterations to find a more informative score.\newline
+\begin{tabular}{ m{6cm} m{7cm} }
+\hline
+similarity(matrix1, matrix2) -> score(double) & compares 2 matrices for similarity. Matrix 1 and matrix 2 must have the same dimensions\\
+\hline
+\end{tabular}
+\vspace{1cm}
+
+More advanced approaches pay a heavy toll on timely performance, as we will see later, as every pixel may go through several iterations of checks to find a more informative score.\newline
 
 \end{itemize}
 
@@ -104,32 +145,34 @@ The accuracy is highly dependent on what parameters are provided to the char rec
 
 Recognition can fail on multiple occasions: Be it in finding lines (for instance by overlapping or outliers), finding glyphs, correctly fusing composite glyphs or finding the correct corresponding char for each glyph.
 
-As mentioned before in section (TODO!!!) the choices and assumptions made are having a huge impact on recognition quality: Such as loss of ratio and therefore ambiguity for certain characters. The similarity measure is the other obvious place for improvement. However it may come with a cost. (see next section TODO!!!)
+As mentioned before in section above, the choices and assumptions made are having a huge impact on recognition quality: Such as loss of ratio and therefore ambiguity for certain characters. The similarity measure is the other obvious place for improvement. However it may come with a cost.
 
 Due to image compression and scanning properties pixels may be scarce and therefore not connect to a single glyph or completely be misplaced as outliers. Here lie some one of the biggest issues. 
 
-For instance if the threshault T is too big (resulting in only white being recognized as white) there could be cases where some characters that should be separate are scanned into a single glyph and therefore recognition will fail.\newline
-Such a case can even happen for 100\% quality jpegs when characters are being pushed closer together due to some rules for a font, as in this example for 'fi' that is then translated into 'h' or 'n'. (see picture....!!!!!!!!TODO) so unfortunately the one-glyph-one-char assumption was not correct but still holds the grund for a rather simple model and can be used for some cases.
+If the threshault T is too big (resulting in only white being recognized as white) there could be cases where some characters that should be separate are scanned into a single glyph and therefore recognition will fail.\newline
+Such a case can even happen for 100\% quality jpegs when characters are being pushed closer together due to some rules for a font, as in this example for 'fi' that is then translated into 'h' or 'n'. So unfortunately the one-glyph-one-char assumption was not correct but still holds the basis for a rather simple model and can be used for some cases.
 
-If on the other hand T is being made too small and only values close to 0 are being regarded as black the assumption will see another fail as some single pixels that keep the glyph together may drop out and fragment the char into different glyphs and therefore also resulting in a failing character recognition.
+If on the other hand T is being made too small and only values close to 0 are being regarded as black, the assumption will see another fail as some single pixels that keep the glyph together may drop out and fragment the char into different glyphs and therefore also resulting in a failing character recognition.
 
-These issues may be fixed by some algorithms that tend to tendencies and gradients. For instance by artificially creating subpixels and increasing the sampling rate (pixels per length) allowing for a smoother transition from one glyph to the next and also going from maximal black to maximal white and back again and creating the wanted separation. However it can result in more computation to be necessary and copying of data. pictures!!!!!!
+These issues may be fixed by some algorithms that tend to tendencies and gradients. For instance by artificially creating subpixels and increasing the sampling rate (pixels per length) allowing for a smoother transition from one glyph to the next and also going from maximal black to maximal white and back again and creating the wanted separation. However it can result in more computation to be necessary and copying of data.
 
 An enhancement could be further provided by redefining black and white and therefore increasing the contrast.
 
-All in all larger letters (with enough space to one another and the next line) certainly will benefit the task of character recognition as well as better picture quality (pixels per length).
+All in all larger letters (with enough space between one another) certainly will benefit the task of character recognition as well as better picture quality (pixels per length).
 
-Factors that can further influence accuracy are extra pixels created by rotation, de-trangularization and rescaling of parts of the image. Those matter will not be further discussed here.
+Factors that can further influence accuracy are extra pixels created by rotation, de-trangularization and rescaling of parts of the image. Those matters will not be further discussed here.
 
-Undoubtedly the most important part, though, is font. Be it handwritten, old fashioned, with or sans serif, and depending on the matching algorithm italic fonts vs non italic fonts.
+Picture quality aside, one of the most important parts, though, is font. Be it handwritten, old fashioned, with or sans serif, italic fonts vs non italic fonts.
 
-Whoever tried to decypher someone else's handwriting knows that OCR cannot be done to 100\% accuracy even by humans. Ironically the simpler sans serif fonts, for our simple case of machine written text, pose a larger threat, as they are mostly reduced to the main features of the respective letters. Such that I and l are only distinguishible by the context. Is the context unknown, there is no chance to know what the result is meant to be. Contexts such as abbreviations can be particularly bad as 'lol', that stands for 'laugh out loudly', could be turned into 'IoT' (Internet of Things) with a single crossbar over the second vertical line representing the 'l', and thus the first 'l' turns into an 'I'. Now these are common abbreveations these days, but turn to a topic completely unknown and intuition will be lost.
+Whoever tried to decypher someone else's handwriting knows that OCR cannot be done to 100\% accuracy even by humans. Ironically the simpler sans serif fonts, for our simple case of machine written text, pose a larger threat, as they are mostly reduced to the main features of the respective letters. Such that I and l are only distinguishible by the context. Is the context unknown, there is no chance to know what the result is meant to be. Contexts such as abbreviations can be particularly bad: as 'lol', that stands for 'laughing out loud', could be turned into 'IoT' (Internet of Things) with a single crossbar over the second vertical line representing the 'l', and thus the first 'l' turns into an 'I'. Now these are common abbreveations these days, but turn to a topic completely unknown and intuition will be lost.
 
 
 \subsection {speed}
 It certainly is useful to fit the boundaries tight to minimize the overall calculations, where nothing is to be expected.
 
 Also binarization at an early stage can provide a speedup due to needing only 1 bit per pixel (at the potential cost of the aforementioned accuracy loss) compared to 4bytes for each integer.
+
+The model has various places for parallelization, be it multithreading or SIMD instructions. Most of the uses for std::transform() are parallelizable. Those that are not are commented in the code for race condition issues. So by making the writeing or accumulating operation atomic it would also be parallelizable. The easiest example therefore is the recognition of single lines, that can happen in parallel.
 
 Larger images with more pixels will benefit the accuracy but also increase the number of computations required.
 
