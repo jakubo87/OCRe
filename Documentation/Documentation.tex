@@ -1,9 +1,18 @@
-\document{article}
+\documentclass[12pt]{scrartcl}
+\usepackage {ucs}
+\usepackage{graphicx}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{hyperref}
+\usepackage{nameref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{array}
 
+\begin{document}
 
-
-
-
+\title {Documentation}
 \section {OCRe - Optical Character Recognition - experiment}
 This is a naive approach to optical character recognition, as one of the most important aspects in its creation was simplicity. OCR is a widely used from reading road signs on mobile phones for translation, scanning of documents - for the sake of digitalization and the ease of use with a computer, to automatically translate manuscripts of old languages in order to decypher them, or to make handwriting machine-readable. Therefore there are many projects out there that are highly complex and use multiple techniques of character recognition to improve on their quality.
 
@@ -20,12 +29,13 @@ OCR can be separated into 3 main branches for similarity measures used.
 \item neural network (a mixture of both depending on the engine and the task)
 \end{itemize}
 
-For ease of implementation reasons this project uses \begin{bold} pattern matching \end{bold}.\endline
+For ease of implementation reasons this project uses \textbf{pattern matching}.\newline
 Feature extraction like finding common lines, such as 'A' consisting in its idea of 3 crossing lines but an '8' of 2 circles, not mentioning 'g' in its various forms and '"' being in its core twice the character ' for instance, would not be feasible to implement in such a short amount of time.
 
 Layout detection and image improvements (rotation, smoothing, ...) would be a nice-to-have, but were not the focus of this project.
 
-I was concerned how to find the actual letters without pushing a window withrough the lines that could potentially contain more than one character - for the case that some small letter would be overshadowed by W or T. (like iT, or iW combinations). To counteract this and enable pattern matching for different sized input and training letters deblobbing and rescaling to a mask was chosen. Unfortunately it resulted in loss of ratio. Therefore 'I', 'l', '.', '|', '-', '_' all have the same mask: a completely black square. Also x and X and c and C would be hard to distinguish.\newline
+I was concerned how to find the actual letters without pushing a window withrough the lines that could potentially contain more than one character - for the case that some small letter would be overshadowed by W or T. (like iT, or iW combinations). To counteract this and enable pattern matching for different sized input and training letters deblobbing and rescaling to a mask was chosen.
+Unfortunately it resulted in loss of ratio. Therefore I l . | - \_ all have the same mask: a completely black square. Also x and X and c and C would be hard to distinguish.\newline
 
 The masks' size was chosen to not change the ratio too much for most letters and deliver decently recognizable images. 
 
@@ -36,38 +46,49 @@ For loading of images and filesystem operations (iterating through the training-
 
 \section {System Model}
   \subsection{Concepts}
+\begin{itemize}
+\item Image: The image to be read. JPEG (i.e. '.jpg') is the only image format supported up to this point.\newline
+\begin{tabular}{ m{6cm} m{7cm} }
+\hline
+read\_image([path]) -> matrix & loads image from disk and copies the image's contents into a newly created matrix.\\
+\hline
+\end{tabular}
 
-Image: The image to be read. JPEG (i.e. '.jpg') is the only image format supported up to this point.\newline
 
-Matrix: A matrix is a 2 dimensional image representation. For ease of use I used (std::)vectors of vectors of integers. Up until the binarization, that happens in gly_scan(), most matrices could potentially be replaced by (sub)views of the actual image loaded to reduce copying. (some work provided)\newline
+\item Matrix: A matrix is a 2 dimensional image representation. For ease of use I used (std::)vectors of vectors of integers. Up until the binarization, that happens in gly\_scan(), most matrices could potentially be replaced by (sub)views of the actual image loaded to reduce copying. (some work provided)\newline
+\begin{tabular}{c c}
+to char(matrix, translation\_table) -> matrix & compares the matrix with the masks in the translation matrix to find the best fit 
+\end{tabular} 
 
-Masks: Masks are binarized matrices of fixed size, that are ready to be compared to one another.\newline
+\item Masks: Masks are binarized matrices of fixed size, that are ready to be compared to one another.\newline
 
-Lines: 2 dimensional subsets of the initial image. Again they could potentially be replaced by subviews in a later version.\newline
+\item Lines: 2 dimensional subsets of the initial image. Again they could potentially be replaced by subviews in a later version.\newline
 
-Glyph: The class glyph contains a set of pixels, that are darker than a certain threshault T*255. They are obtained by gly_scan([line]). Upon discovering a new pixel the constructor issues the method findall(), that finds all directly connected pixels. This is an assumption, that may or may not be useful depending on the characterset and the quality of the scan.\newline
+\item Glyph: The class glyph contains a set of pixels, that are darker than a certain threshault $T*255$. They are obtained by gly\_scan([line]). Upon discovering a new pixel the constructor issues the method findall(), that finds all directly connected pixels. This is an assumption, that may or may not be useful depending on the characterset and the quality of the scan.\newline
 Glyphs can be compared for equality, such that if any pixel is found in an existing glyph those 2 glyphs must be identical. Which is the logical conclusion of the before mentioned assumption.\newline
 For some characters like i or j (or ; or : respectively) glyphs must be fused, which poses another threat to the accuracy or in this case disambiguity as will be seen later on.\newline
 
-Translation Table: A translation table is the key to translate masks of glyphs into corresponding characters. It is being made in the thread 1 while the main thread issues the scanning of lines for glyphs.
+\item Translation Table: A translation table is the key to translate masks of glyphs into corresponding characters. It is being made in the thread 1 while the main thread issues the scanning of lines for glyphs.
 
-similarity measure: To compare 2 masks an abstract distance measure is being needed. In the basic form, every pixel that is not the same for the input and the mask to be tested against, gets a penalty point. The mask that has fewest points for the input mask is most likely to be the correct character.\newline
+\item similarity measure: To compare 2 masks an abstract distance measure is being needed. In the basic form, every pixel that is not the same for the input and the mask to be tested against, gets a penalty point. The mask that has fewest points for the input mask is most likely to be the correct character.\newline
 more advanced approaches pay a heavy toll on timely performance as we will see later as every pixel may go through several iterations to find a more informative score.\newline
 
-
+\end{itemize}
 
   \subsection{workflow}
 In this project the following steps are being issued as follows:\newline
 Thread 0
 \begin{itemize}
 \item thread 0
-	\itemize issue thread 1 to simultaneously create masks
+  \begin{itemize}
+    \item issue thread 1 to simultaneously create masks
+  \end {itemize}
 \item thread 0 then looks to reduce the window to be scanned to a minimum and finds separate lines
 \item these lines are then one-by-one (or in parallel) provided to the recognition subsystem, which:
   \begin{itemize}
-  \item scans the line for glyphs (gly_scan) and fuses composed glyphs
+  \item scans the line for glyphs (gly\_scan) and fuses composed glyphs
   \item due to the order of scanning the characters need to be sorted by their x-coordinate  
-  \item transforms the glyphs to a matrix, resizes to a mask and then tests for similarity agains the provided masks of the set of characters in the folder 'Trainingimages' to find the corrseponding ASCII char  
+  \item transforms the glyphs to a matrix, resizes to a mask and then tests for similarity against the provided masks of the set of characters in the folder 'Trainingimages' to find the corrseponding ASCII char  
   \item then empty spaces are to be inserted into the almost ready string
   \item which will then be the outcome of the procedure
   \end{itemize}
@@ -114,12 +135,13 @@ Larger images with more pixels will benefit the accuracy but also increase the n
 
 Probably the most impacting factor in speed is the choice of similarity measure. This project has 2 possibilities implemented. One plain and clear: "if the same pixel for both comparing masks is different, there is going to be a penalty". And the other is a distance measure: "how far is the next same colored pixel?"
 
-The first one is highly parallelizable as every pixel is independent from one another, and needs to be visited only once. The second variant yields slightly better outcomes but is also a lot slower as the complexity goes from O(N) - with N being the number of pixels in a mask - to O(N*N*N). Even though not all pixels have to be repeatedly visited the second variant has a lot of if-clauses resulting in branching and therefore pipeline stalls and also possibly a lot of memory transactions. Maybe letting the program run into full N*N*N complexity and then pic the best would result in better performance due to hardware parallelization capacities such as AVX and fewer pipeline stalls, but that again was not the main concern here.
+The first one is highly parallelizable as every pixel is independent from one another, and needs to be visited only once. The second variant yields slightly better outcomes but is also a lot slower as the complexity goes from O(N) - with N being the number of pixels in a mask - to O($N^3$). Even though not all pixels have to be repeatedly visited the second variant has a lot of if-clauses resulting in branching and therefore pipeline stalls and also possibly a lot of memory transactions.
 
-It may prove to be interesting if some sort of 2 dimensional dynamic time warping algorithm was implemented to find the best fit for slightly offset masks aswell as provide a precise measure of how far off the image is. The variance over all the pixels could eradicate an offset and put more emphasis on the total structure of the pattern and the features and less on the relatively random occurrence of pixels. However the normal DTW algorithm for a 1 dimensional series is already O(N*N). If such an algorithm exists, it will hardly be better than O(N*N*N*N) which will have to be bought with considerably smaller masks. However losing the information on position and ratio should provide a good enough approach with the second approach as the masks are already aligned, if the character is the correct one.
+It may prove to be interesting if some sort of 2 dimensional dynamic time warping algorithm was implemented to find the best fit for slightly offset masks aswell as provide a precise measure of how far off the image is. The variance over all the pixels could eradicate an offset and put more emphasis on the total structure of the pattern and the features and less on the relatively random occurrence of pixels. However the normal DTW algorithm for a 1 dimensional series is already O($N^2$). If such an algorithm exists, it will hardly be better than O($N^4$) which will have to be bought with considerably smaller masks. However losing the information on position and ratio should provide a good enough approach with the second approach as the masks are already aligned, if the character is the correct one.
 
 \section {Why C++?}
-C++ has the benefit of having widespread use, well tested libraries and compilers that are well optimized, that can eat a lot of work at compilation time and really occupy a CPU's core. Its abstract template system can generalize a once used method for other data types and its type system is strict enough to halt the compiler to give beneficial feedback to the developer giving exact control instead of just letting minor irregularities pass by. In this case most of the parameters were only known at runtime, so that not many things can be modelled generally and folded and squared away by the compiler. Modern features like type deduction, operator overloading and the aforementioned template functions can make clean and overall precise, understandible and expressive code. 
+C++ has the benefit of having widespread use, well tested and optimised libraries and compilers that are well optimized, that can eat a lot of work at compilation time and really occupy a CPU's core. Its abstract template system can generalize a function for other data types and its type system is strict to halt compilation to give beneficial feedback to the developer giving exact control instead of just letting minor irregularities pass by. In this case most of the parameters were only known at runtime, so that not many things can be modelled generally and folded and squared away by the compiler. Modern features like type deduction, operator overloading and the aforementioned template functions can make clean and overall precise, understandible and expressive code.
+C++ allows to use a formal style and its deterministic memory management will allow for complete control over what is happening when. 
 
 
 

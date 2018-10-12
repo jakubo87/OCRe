@@ -92,7 +92,7 @@ auto similarity(M && input,M && comp){
   result= std::accumulate(rows.begin(), rows.end(), 0);
   result/=H*W;//norm
   //std::cout << "score= " << -std::sqrt(result) << "\n";
-  return -std::sqrt(result);
+  return -result;
 }
 
 template<class P>
@@ -217,18 +217,19 @@ public:
     int _left=INT_MAX;
     int _right=INT_MIN;
     int _top=INT_MAX;
-    int _bottom=INT_MAX;
+    int _bottom=INT_MIN;
     //std::unordered_set<point,MyHash> _data;
     Cont _data;
 
 
   void insert(point p){
-    if(!contains(p))
+    if(!contains(p)){
       _data.push_back(p);
-    if (p.x<_left)    _left=p.x;
-    if (p.x>_right)   _right=p.x;
-    if (p.y<_top)     _top=p.y;
-    if (p.y>_bottom)  _bottom=p.y;
+      if (p.x<_left)    _left=p.x;
+      if (p.x>_right)   _right=p.x;
+      if (p.y<_top)     _top=p.y;
+      if (p.y>_bottom)  _bottom=p.y;
+    }
   }
 
 
@@ -265,14 +266,14 @@ public:
   template<class M, class Tr>
   decltype(auto) to_char(M && m, Tr && trans){
     char best=' ';
-    int init_score=-500;
+    int init_score=INT_MIN;
     double score=init_score;
 
     auto mask = matrix(std::forward<M>(m),MaskH, MaskW);
-    //to_image(mask); //for debugging and demontration purposes
+    to_image(mask); //for debugging and demontration purposes
     for (int i=0;i<trans.first.size();++i){
       auto curr= similarity(mask,trans.first[i]);
-      //auto curr= similarity2(comp,trans.first[i]);
+      //auto curr= similarity2(mask,trans.first[i]);
       if (curr>score){
         score =curr; //max
         best=trans.second[i];
@@ -285,7 +286,7 @@ public:
 
 
 
-//algorithm, scan for glyphs, outputs an rvalue vector of glyphs aka gly_string
+//algorithm, scan for glyphs, outputs a vector of glyphs aka gly_string
 template<class M>
 decltype(auto) gly_scan(M && input){
   int height=input.size();
@@ -299,13 +300,10 @@ decltype(auto) gly_scan(M && input){
       if (input[y][x]<T*255)
       {
         bool cont=false; //contained
-        for (int g=0;g<text.size();++g){ //for every glyph found
-          cont=text[g].contains(point{x,y});
-          if (cont) break;
-        }
+        cont=std::any_of(std::begin(text),std::end(text),[&](auto & g){return g.contains(point{x,y});});
         //find all pixels for the new glyph through neighbourhood
         if (!cont){
-          //std::cout << "adding new glyph for coord" << x <<" "<< y <<"\n";
+          std::cout << "adding new glyph for coord " << x <<" "<< y << " color: " << input[y][x] << "\n";
           text.push_back(glyph(point{x,y}, input)); //create new glyph and add to vector
         }
       }

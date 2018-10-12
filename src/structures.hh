@@ -48,8 +48,8 @@ public:
   matrix(S && s) {
     const X lt=left(s);
     const Y tp=top(s);
-    const Y height = bottom(s)-top(s)+1;//is the last VALID pixel -> +1
-    const X width = right(s)-left(s)+1;
+    const Y height = bottom(s)-tp+1;//is the last VALID pixel -> +1
+    const X width = right(s)-lt+1;
 
     for (int i=0;i<height;++i)
       push_back({std::vector<int>(width, WHITE)});
@@ -69,7 +69,6 @@ public:
     const Y cur_h=input.size();
     const X cur_w=std::begin(input)->size();
 
-  //std::ratio only for compile time known stuff...
     double Dx = static_cast<double>(tar_w)/cur_w;
     double Dy = static_cast<double>(tar_h)/cur_h;
 
